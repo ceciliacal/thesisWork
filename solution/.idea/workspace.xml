@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="339031a3-1e78-4186-9831-fd0a4977c43b" name="Changes" comment="starting query1">
+      <change beforePath="$PROJECT_DIR$/src/main/java/flink/MyProcessWindowFunction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/flink/MyProcessWindowFunction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/flink/Queries.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/flink/Queries.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/kafka/Consumer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/kafka/Consumer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/kafka/KafkaConsumerResults.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/kafka/KafkaConsumerResults.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/kafka/Producer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/kafka/Producer.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <task path="$PROJECT_DIR$">
+          <activation />
+        </task>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="solution" type="f1a62948:ProjectNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="solution" type="f1a62948:ProjectNode" />
+                <item name="Run Configurations" type="7b0102dc:RunConfigurationsNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="266nH246YpCasB0ifmHo6ve74QK" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="nodejs_package_manager_path" value="npm" />
+    <property name="project.structure.last.edited" value="SDKs" />
+    <property name="project.structure.proportion" value="0.0" />
+    <property name="project.structure.side.proportion" value="0.2" />
+    <property name="settings.editor.selected.configurable" value="reference.projectsettings.compiler.javacompiler" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CreateClassDialog.RecentsKey">
+      <recent name="flink.query1" />
+      <recent name="flink" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/main/java" />
+    </key>
+    <key name="ExtractSuperBase.RECENT_KEYS">
+      <recent name="flink.query1" />
+    </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="utils" />
+    </key>
+  </component>
+  <component name="RunAnythingCache">
+    <option name="myCommands">
+      <command value="gradle build" />
+      <command value="gradle clean" />
+      <command value="gradle jar" />
+    </option>
+  </component>
+  <component name="RunManager" selected="Application.Producer">
+    <configuration name="Consumer" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="ALTERNATIVE_JRE_PATH" value="/usr/lib/jvm/java-1.11.0-openjdk-amd64" />
+      <option name="MAIN_CLASS_NAME" value="kafka.Consumer" />
+      <module name="solution.main" />
+      <option name="PROGRAM_PARAMETERS" value="3 2" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="kafka.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Producer" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="kafka.Producer" />
+      <module name="solution.main" />
+      <option name="PROGRAM_PARAMETERS" value="3" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="kafka.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="thesis [build]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="build" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="thesis [clean]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="clean" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="thesis [jar]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="jar" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Application.Consumer" />
+      <item itemvalue="Application.Producer" />
+      <item itemvalue="Gradle.thesis [build]" />
+      <item itemvalue="Gradle.thesis [jar]" />
+      <item itemvalue="Gradle.thesis [clean]" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.Producer" />
+        <item itemvalue="Gradle.thesis [clean]" />
+        <item itemvalue="Gradle.thesis [jar]" />
+        <item itemvalue="Gradle.thesis [build]" />
+        <item itemvalue="Application.Consumer" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="339031a3-1e78-4186-9831-fd0a4977c43b" name="Changes" comment="" />
+      <created>1646752814429</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1646752814429</updated>
+      <workItem from="1646752815848" duration="1077000" />
+      <workItem from="1646753956270" duration="7102000" />
+      <workItem from="1646825528730" duration="3346000" />
+      <workItem from="1646832579457" duration="1344000" />
+      <workItem from="1646833961544" duration="1736000" />
+      <workItem from="1646934427168" duration="793000" />
+      <workItem from="1646998648446" duration="852000" />
+      <workItem from="1647367093518" duration="18805000" />
+      <workItem from="1647453445103" duration="19000" />
+      <workItem from="1647453739089" duration="3092000" />
+      <workItem from="1647457360616" duration="686000" />
+      <workItem from="1647518406707" duration="1016000" />
+      <workItem from="1647519951809" duration="10649000" />
+      <workItem from="1647616106851" duration="6140000" />
+      <workItem from="1647797835242" duration="7635000" />
+      <workItem from="1647858998386" duration="13790000" />
+      <workItem from="1647947756921" duration="19741000" />
+      <workItem from="1648120782837" duration="4610000" />
+      <workItem from="1648133521868" duration="8796000" />
+      <workItem from="1648210700783" duration="36365000" />
+      <workItem from="1648558847630" duration="8732000" />
+      <workItem from="1648634154697" duration="53696000" />
+      <workItem from="1649018864164" duration="49318000" />
+      <workItem from="1649186803144" duration="8001000" />
+      <workItem from="1649244566198" duration="24774000" />
+      <workItem from="1649319671202" duration="17154000" />
+      <workItem from="1649361238197" duration="4675000" />
+      <workItem from="1649367840769" duration="24124000" />
+      <workItem from="1649505989047" duration="15346000" />
+      <workItem from="1649586643823" duration="9139000" />
+      <workItem from="1649610417482" duration="13160000" />
+      <workItem from="1649627663406" duration="2262000" />
+      <workItem from="1649669163105" duration="77510000" />
+      <workItem from="1649858157899" duration="904000" />
+      <workItem from="1649863968897" duration="3162000" />
+      <workItem from="1649867214218" duration="947000" />
+      <workItem from="1649869535556" duration="6127000" />
+      <workItem from="1649923989587" duration="6656000" />
+      <workItem from="1649943393867" duration="4296000" />
+      <workItem from="1649956444447" duration="2742000" />
+      <workItem from="1649967073610" duration="2848000" />
+      <workItem from="1650012280860" duration="16435000" />
+      <workItem from="1650490812334" duration="297000" />
+      <workItem from="1650537444382" duration="19858000" />
+      <workItem from="1650572436742" duration="21872000" />
+      <workItem from="1650977669164" duration="2567000" />
+      <workItem from="1651070664299" duration="1602000" />
+    </task>
+    <task id="LOCAL-00001" summary="starting query1">
+      <created>1647869419430</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1647869419430</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="dependencySupport" implementationName="java:io.grpc:grpc-api" />
+    <option featureType="dependencySupport" implementationName="java:org.apache.kafka:kafka-clients" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="starting query1" />
+    <option name="LAST_COMMIT_MESSAGE" value="starting query1" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>
