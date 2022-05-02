@@ -89,7 +89,7 @@ public class Queries {
                         .process(new ProcessWindowFunction<FinalOutput, String, Integer, TimeWindow>() {
                             @Override
                             public void process(Integer integer, ProcessWindowFunction<FinalOutput, String, Integer, TimeWindow>.Context context, Iterable<FinalOutput> elements, Collector<String> out) throws Exception {
-                                System.out.println("key = "+integer+" "+new Date(context.window().getStart()));
+                                System.out.println("key = "+integer+"  "+new Date(context.window().getStart()));
                                 elements.forEach(System.out::println);
                             }
                         })
