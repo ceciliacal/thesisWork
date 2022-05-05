@@ -30,6 +30,9 @@ public class Producer {
     protected static Timestamp prev;
     protected static boolean mustStop;
 
+    protected static Map<Tuple2<Integer, String>, Result> intermediateResults2;      //K: #batch+symbol V:Result
+
+
 
     //creates kafka producer
     public static org.apache.kafka.clients.producer.Producer<String, String> createProducer() {

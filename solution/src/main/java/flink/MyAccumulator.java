@@ -35,23 +35,26 @@ public class MyAccumulator implements Serializable {
 
     public void add(Event value) {
 
+        List<Integer> batches;
+
         if (lastPricePerSymbol==null){
             lastPricePerSymbol = new HashMap<>();
         }
         if (symbolInBatches==null){
             symbolInBatches = new HashMap<>();
         }
+
         if (symbolInBatches.containsKey(value.getSymbol())){
-            List<Integer> batches = symbolInBatches.get(value.getSymbol());
+            batches = symbolInBatches.get(value.getSymbol());
             if (!batches.contains(value.getBatch())){
                 batches.add(value.getBatch());
             }
         } else {
-            List<Integer> batches = new ArrayList<>();
+            batches = new ArrayList<>();
             batches.add(value.getBatch());
-            symbolInBatches.put(value.getSymbol(),batches);
         }
-
+        System.out.println("symbolInBatches: "+symbolInBatches);
+        symbolInBatches.put(value.getSymbol(),batches);
         lastPricePerSymbol.put(value.getSymbol(), value.getLastTradePrice());
 
     }

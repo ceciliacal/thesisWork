@@ -46,38 +46,6 @@ public class Queries {
 
                         //System.out.println("proc-time = "+new Timestamp(System.currentTimeMillis()));
                         System.out.println("Firing window: "+new Date(context.window().getStart()));
-                        int i = 0;
-
-                        FinalOutput res = elements.iterator().next();  //first element in iterator
-                        String stringToSend = "0;"+
-                                res.getBatch()+";"+
-                                res.getSymbol()+";"+
-                                res.getSymbol_WindowEma38().get(res.getSymbol())._2+";"+
-                                res.getSymbol_WindowEma100().get(res.getSymbol())._2+";"+
-                                res.getSymbol_buyCrossovers().get(res.getSymbol())+";"+
-                                res.getSymbol_sellCrossovers().get(res.getSymbol())+","
-                                ;
-
-                        for (FinalOutput element : elements) {
-                            //System.out.println("element: "+element);
-                            if (i==0){
-                                stringToSend = stringToSend;
-                            } else{
-                                stringToSend = stringToSend +
-                                        i+";"+
-                                        element.getBatch()+";"+
-                                        element.getSymbol()+";"+
-                                        element.getSymbol_WindowEma38().get(element.getSymbol())._2+";"+
-                                        element.getSymbol_WindowEma100().get(element.getSymbol())._2+";"+
-                                        element.getSymbol_buyCrossovers().get(element.getSymbol())+";"+
-                                        element.getSymbol_sellCrossovers().get(element.getSymbol())+","
-                                        ;
-                            }
-                            //System.out.println(new Date(context.window().getStart()) + " " + element);
-                            i++;
-                        }
-
-                        //out.collect(stringToSend);
                         elements.forEach(out::collect);
                     }
                 });
@@ -88,9 +56,28 @@ public class Queries {
                 .window(TumblingEventTimeWindows.of(Time.minutes(Config.windowLen)))
                         .process(new ProcessWindowFunction<FinalOutput, String, Integer, TimeWindow>() {
                             @Override
-                            public void process(Integer integer, ProcessWindowFunction<FinalOutput, String, Integer, TimeWindow>.Context context, Iterable<FinalOutput> elements, Collector<String> out) throws Exception {
-                                System.out.println("key = "+integer+"  "+new Date(context.window().getStart()));
-                                elements.forEach(System.out::println);
+                            public void process(Integer batchKey, ProcessWindowFunction<FinalOutput, String, Integer, TimeWindow>.Context context, Iterable<FinalOutput> elements, Collector<String> out) throws Exception {
+                                Date start = new Date(context.window().getStart());
+                                String startWindow = start.toString();
+                                System.out.println("key = "+batchKey+" "+new Date(context.window().getStart()));
+                                //FinalOutput element = elements.iterator().next();
+
+                                elements.forEach( element -> {
+                                    if (batchKey == element.getBatch()){
+                                        //System.out.println("key2 = "+batchKey);
+                                        String stringToSend =
+                                                element.getBatch()+","+
+                                                element.getSymbol()+","+
+                                                element.getSymbol_WindowEma38().get(element.getSymbol())._2+","+
+                                                element.getSymbol_WindowEma100().get(element.getSymbol())._2+","+
+                                                element.getSymbol_buyCrossovers().get(element.getSymbol())+","+
+                                                element.getSymbol_sellCrossovers().get(element.getSymbol())+","+
+                                                startWindow;
+                                ;
+                                        //System.out.println("stringToSend = "+stringToSend);
+                                        out.collect(stringToSend);
+                                    }
+                                });
                             }
                         })
                 //.print();
