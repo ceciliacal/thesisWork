@@ -29,6 +29,7 @@ public class Producer {
     protected static Integer cnt;
     protected static Timestamp prev;
     protected static boolean mustStop;
+    protected static TreeMap<Integer, Tuple2<Timestamp, Boolean>> firingWindows; //last window upperBound for each batch (e.g. for batch0 is 8.20am)
 
     protected static Map<Tuple2<Integer, String>, Result> intermediateResults2;      //K: #batch+symbol V:Result
 
@@ -52,6 +53,7 @@ public class Producer {
         batchSeqId = new HashMap<>();
         intermediateResults = new HashMap<>();
         finalResults = new HashMap<>();
+        firingWindows = new TreeMap<>();
         longBatch = -1;
         mustStop = false;
 
@@ -90,6 +92,7 @@ public class Producer {
 
         KafkaConsumerResults kafkaConsumer = new KafkaConsumerResults(newBenchmark, challengeClient);
         System.out.println("challengeClient = "+challengeClient);
+        /*
         new Thread(()->{
             try {
                 kafkaConsumer.runConsumer();
@@ -98,9 +101,11 @@ public class Producer {
             }
         }).start();
 
+         */
+
 
         //PrintWriter writer = new PrintWriter("/tmp/procTimes.txt", "UTF-8");
-        PrintWriter writer = new PrintWriter("procTimes.txt", "UTF-8");
+        PrintWriter writer = new PrintWriter("primiMille.csv", "UTF-8");
 
         //Process the events
         cnt = 0;
@@ -118,7 +123,8 @@ public class Producer {
 
         while(true) {
 
-            System.out.println("==== cnt: "+cnt);
+            String[][] value = {new String[6]};
+            final String[] valueToSend = new String[1];
             Batch batch = challengeClient.nextBatch(newBenchmark);
             if (batch==null){
                 batch = challengeClient.nextBatch(newBenchmark);
@@ -132,6 +138,8 @@ public class Producer {
                 break;
             }
 
+            //System.out.println("batch List: "+batch.getEventsList());
+            System.out.println("==== cnt: "+cnt);
 
             //======= windows setup ========
             if (cnt==0){
@@ -142,23 +150,26 @@ public class Producer {
             }
             //==== end of windows setup =====
 
-
-            String[][] value = {new String[7]};
-            final String[] valueToSend = new String[1];
+            long startTsSeconds = batch.getEvents(0).getLastTrade().getSeconds();
+            Timestamp startTsBatch = stringToTimestamp(formatter.format(new Date(startTsSeconds * 1000L)),1);
+            System.out.println("startTsBatch = "+startTsBatch);
 
             long lastTsSeconds = batch.getEvents(num-1).getLastTrade().getSeconds();
             Timestamp lastTsBatch = stringToTimestamp(formatter.format(new Date(lastTsSeconds * 1000L)),1);
-            long startTsSeconds = batch.getEvents(0).getLastTrade().getSeconds();
-            Timestamp startTsBatch = stringToTimestamp(formatter.format(new Date(startTsSeconds * 1000L)),1);
-
-            System.out.println("startTsBatch = "+startTsBatch);
             System.out.println("lastTsBatch = "+lastTsBatch);
 
             if (lastTsSeconds - startTsSeconds > TimeUnit.MINUTES.toSeconds(windowLen)){
                 longBatch=cnt;
                 setFinalWindowLongBatch(windowProducingResult(lastTsBatch,nextWindow));
-                //System.out.println("batch "+longBatch+" size is bigger than just one window.");
-                //System.out.println("finalWindowLongBatch = "+ finalWindowLongBatch);
+                firingWindows.put(longBatch, new Tuple2<>(finalWindowLongBatch, false));
+            } else if (startTsBatch.compareTo(nextWindow)<0 && lastTsBatch.compareTo(nextWindow)>=0){
+                firingWindows.put(cnt, new Tuple2<>(windowProducingResult(lastTsBatch,nextWindow), false));
+            } else if (startTsBatch.compareTo(nextWindow)==0){
+                //System.out.println("pd!"+ cnt);
+                firingWindows.put(cnt, new Tuple2<>(windowProducingResult(lastTsBatch,nextWindow), false));
+                System.out.println(""+firingWindows.get(cnt));
+            } else {
+                firingWindows.put(cnt, new Tuple2<>(nextWindow,false));
             }
 
 
@@ -171,14 +182,13 @@ public class Producer {
                 assert currentTimestamp != null;
 
                 //=========== send data ===========
-
                 value[0][0] = batch.getEvents(i).getSymbol();
                 value[0][1] = String.valueOf(batch.getEvents(i).getSecurityType());
                 value[0][2] = String.valueOf(currentTimestamp);
                 value[0][3] = String.valueOf(batch.getEvents(i).getLastTradePrice());
-                value[0][4] = String.valueOf(cnt);     //batch number
+                value[0][4] = String.valueOf(batch.getSeqId());     //batch number
                 value[0][5] = String.valueOf(i);       //event number inside of current batch
-                value[0][6] = String.valueOf(procTimestamp);     //processing ts
+                //value[0][6] = String.valueOf(procTimestamp);     //processing ts
                 valueToSend[0] = String.join(",", value[0]);
 
                 ProducerRecord<String,String> producerRecord= new ProducerRecord<>(Config.TOPIC, 0, currentTimestamp.getTime(), String.valueOf(cnt), valueToSend[0]);
@@ -193,6 +203,7 @@ public class Producer {
                     if(metadata != null){
                         //successful writes
                         //System.out.println("msgSent: ->  key: "+producerRecord.key()+" value: "+ producerRecord.value());
+                        writer.println(producerRecord.value());
                     }
                     else{
                         //unsuccessful writes
@@ -213,14 +224,19 @@ public class Producer {
             System.out.println("Sent batch #" + cnt);
             ++cnt;
 
-            if(cnt > 26) { //for testing you can stop early, in an evaluation run, run until getLast() is True.
+            /*
+            if(cnt > 1000) { //for testing you can stop early, in an evaluation run, run until getLast() is True.
                 break;
             }
+
+             */
 
 
         }
         writer.close();
         mustStop = true;
+
+        System.out.println("firingWindows: "+firingWindows);
         //challengeClient.endBenchmark(newBenchmark);
         System.out.println("ended Benchmark");
         producer.close();
@@ -241,18 +257,9 @@ public class Producer {
         return new Timestamp(res);
     }
 
-
-    public Map<Integer, Long> getBatchSeqId() {
-        return batchSeqId;
-    }
-
-    public void setBatchSeqId(Map<Integer, Long> batchSeqId) {
-        this.batchSeqId = batchSeqId;
-    }
-
     public static Timestamp stringToTimestamp(String strDate, int invoker){
 
-        SimpleDateFormat dateFormat = null;
+        SimpleDateFormat dateFormat;
 
         if (invoker==0){
             dateFormat = new SimpleDateFormat(Config.pattern2);
@@ -271,6 +278,14 @@ public class Producer {
 
     }
 
+
+    public Map<Integer, Long> getBatchSeqId() {
+        return batchSeqId;
+    }
+
+    public void setBatchSeqId(Map<Integer, Long> batchSeqId) {
+        this.batchSeqId = batchSeqId;
+    }
 
     public static Map<Tuple2<Integer, String>, Tuple2<Float, Float>> getIntermediateResults() {
         return intermediateResults;

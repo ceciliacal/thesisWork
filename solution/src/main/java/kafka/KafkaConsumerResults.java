@@ -4,10 +4,12 @@ import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import scala.Tuple2;
+import utils.Config;
 
 
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,24 +32,6 @@ public class KafkaConsumerResults {
         this.challengeClient = challengeClient;
     }
 
-    public Benchmark getNewBenchmark() {
-        return newBenchmark;
-    }
-
-    public void setNewBenchmark(Benchmark newBenchmark) {
-        this.newBenchmark = newBenchmark;
-    }
-
-    public ChallengerGrpc.ChallengerBlockingStub getChallengeClient() {
-        return challengeClient;
-    }
-
-    public void setChallengeClient(ChallengerGrpc.ChallengerBlockingStub challengeClient) {
-        this.challengeClient = challengeClient;
-    }
-
-
-
     private static Consumer<Long, String> createConsumer() {
         final Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
@@ -69,17 +53,12 @@ public class KafkaConsumerResults {
         AtomicInteger countFor = new AtomicInteger();
 
         final Consumer<Long, String> consumer = createConsumer();
-        intermediateResults = new HashMap<>();
-        finalResults = new HashMap<>();
         indicatorsPerBatch = new HashMap<>();
         crossoverEventsPerBatch = new HashMap<>();
 
         //final int giveUp = 100;
         final int giveUp = 50;
         int noRecordsCount = 0;
-
-        System.out.println("in runconsumer: newBenchmark = "+ newBenchmark);
-        System.out.println("in runconsumer: challengeClient = "+challengeClient);
 
         while (true) {
             final ConsumerRecords<Long, String> consumerRecords = consumer.poll(1000);
@@ -91,35 +70,96 @@ public class KafkaConsumerResults {
             }
 
             consumerRecords.forEach(record -> {
-                //System.out.printf("Consumer Record:(%d, %s, %d, %d)\n", record.key(), record.value(), record.partition(), record.offset());
 
                 String str = record.value();
-                System.out.println(str);    //todo: su kafka ieb della prima finestra c'è ma qui non lo stampa mai!!!
+                //System.out.println(str);
 
                 String[] values = str.split(",");
+                int currBatch = Integer.parseInt(values[0]);
+                int prevBatch = currBatch - 1;
+                Timestamp endOfWindow = stringToTimestamp(values[6],0);
+                assert endOfWindow != null;
+                //System.out.println("endOfWindow "+endOfWindow+" "+str);
+
+                /*
+                if (values[0].equals("49")){
+                    System.out.println("NELL IF49");
+                    System.out.println("kk :: "+stringToTimestamp(values[6],0));
+                    System.out.println("jj :: "+firingWindows.get(Integer.valueOf(values[0])));
+                    System.out.println("firingWindows "+firingWindows);
+                    System.out.println("str: "+str);
+                }
+                 */
+
+                TreeMap<Integer, Tuple2<Timestamp, Boolean>> firingWindowsClone = firingWindows;
+
+                if (currBatch>0){
+                    Timestamp endPrevBatch = firingWindowsClone.get(prevBatch)._1;
+                    if (endOfWindow.compareTo(endPrevBatch) > 0 && (!firingWindowsClone.get(prevBatch)._2)){
+                        //sono arrivati tutti i risultati della finestra precedente e quindi posso inviarli con gRPC
+                        Tuple2<Timestamp, Boolean> check = new Tuple2<>(firingWindowsClone.get(prevBatch)._1, true);
+                        firingWindowsClone.put(prevBatch, check);
+                        firingWindows.put(prevBatch, check);
+
+                        //todo. 25 sta a meta delle 8.20, quindi con la send li devo mandare tutti fino a currBatch-1 (la key25 no!)
+                        System.out.println("endOfWindow: "+endOfWindow);
+                        System.out.println("firingWindows.get(currBatch-1): "+firingWindowsClone.get(prevBatch));
+                        System.out.println("firingWindowsClone "+firingWindowsClone);
+                        System.out.println("tempo di inviare!!!! str: "+str);
+                        System.out.println("keySet VISTE X RISULTATI: "+indicatorsPerBatch.keySet());
+
+                        indicatorsPerBatch.keySet().forEach( batch -> {
+
+                            ResultQ1 q1Result = ResultQ1.newBuilder()
+                                    .setBenchmarkId(newBenchmark.getId()) //set the benchmark id
+                                    .setBatchSeqId(batchSeqId.get(batch)) //set the sequence number
+                                    .addAllIndicators(indicatorsPerBatch.get(batch))
+                                    .build();
+                            challengeClient.resultQ1(q1Result);
+
+                        });
+                        //todo controlla il clone che non punta a stessa area di memoria
+                        crossoverEventsPerBatch.keySet().forEach( batch -> {
+
+                            ResultQ2 q2Result = ResultQ2.newBuilder()
+                                    .setBenchmarkId(newBenchmark.getId()) //set the benchmark id
+                                    .setBatchSeqId(batchSeqId.get(batch)) //set the sequence number
+                                    .addAllCrossoverEvents(crossoverEventsPerBatch.get(batch))
+                                    .build();
+                            challengeClient.resultQ2(q2Result);
+
+                        });
+                            //todo: last
+                        final Set<Map.Entry<Integer, List<Indicator>>> entries = indicatorsPerBatch.entrySet();
+
+                        for (Map.Entry<Integer, List<Indicator>> entry : entries) {
+                            indicatorsPerBatch.remove(entry.getKey());
+                            // do whatever
+                        }
+                        System.out.println("dopoREMOVE indicatorsPerBatch: "+indicatorsPerBatch.keySet());
+                    }
+
+                }
+
                 Indicator.Builder indicator = Indicator.newBuilder();
 
                 if (indicatorsPerBatch.containsKey(Integer.valueOf(values[0]))){
+
                     List<Indicator> indicators = indicatorsPerBatch.get(Integer.valueOf(values[0]));
-
-                    if (!indicators.contains(Indicator.newBuilder().build().getSymbol().equals(values[1]))){
-                        indicator.setSymbol(values[1]);
-                        indicator.setEma38(Float.valueOf(values[2]));
-                        indicator.setEma100(Float.valueOf(values[3]));
-                        //add list indicator
-                        indicators.add(indicator.build());
-                        indicatorsPerBatch.put(Integer.valueOf(values[0]), indicators);
-                    }
-
-                } else {
-                    List<Indicator> indicators = new ArrayList<>();
-
                     indicator.setSymbol(values[1]);
-                    indicator.setEma38(Float.valueOf(values[2]));
-                    indicator.setEma100(Float.valueOf(values[3]));
+                    indicator.setEma38(Float.parseFloat(values[2]));
+                    indicator.setEma100(Float.parseFloat(values[3]));
                     //add list indicator
                     indicators.add(indicator.build());
+                    indicatorsPerBatch.put(Integer.valueOf(values[0]), indicators);
+                } else {
 
+                    List<Indicator> indicators = new ArrayList<>();
+                    indicator.setSymbol(values[1]);
+                    indicator.setEma38(Float.parseFloat(values[2]));
+                    indicator.setEma100(Float.parseFloat(values[3]));
+                    //add list indicator
+                    indicators.add(indicator.build());
                     indicatorsPerBatch.put(Integer.valueOf(values[0]), indicators);
                 }
 
@@ -164,19 +204,9 @@ public class KafkaConsumerResults {
                     crossoverEventsPerBatch.put(Integer.valueOf(values[0]), crossoverEvents);
                 }
 
-                System.out.println("indicatorsPerBatch key: "+indicatorsPerBatch.keySet());
-                System.out.println("crossoverEventsPerBatch key: "+crossoverEventsPerBatch.keySet());
+                //System.out.println("indicatorsPerBatch key: "+indicatorsPerBatch.keySet());
+                //System.out.println("crossoverEventsPerBatch key: "+crossoverEventsPerBatch.keySet());
 
-
-                /*
-                if (mustStop){
-                    challengeClient.endBenchmark(newBenchmark);
-                    System.out.println("ended Benchmark consumer");
-                }
-                */
-
-                //TODO : check un solo : 0,IEBBB.FR,10.004864,4.0511293,null,null -> gli ema di che finestra sono???
-                //TODO : nel for sono 24519, su kafdrop sono 24555 record. perche?
                 countFor.getAndIncrement();
                 //System.out.println("nel for "+countFor);
             });
@@ -185,49 +215,19 @@ public class KafkaConsumerResults {
             //System.out.println("nel while"+ countWhile);
             consumer.commitAsync();
 
+            /*
             if (mustStop){
                 int countRecords = consumerRecords.count();
                 System.out.println("countRecords: "+countRecords);
             }
 
-            if (consumerRecords.isEmpty()){
-                System.out.println("EMPTY!!");
-            }
+             */
 
         }
 
+        //todo: last batch mandato (cosi mando un intervallo)
         //System.out.println("1indicatorsPerBatch.get(batch)0: "+indicatorsPerBatch.get(0));
-        indicatorsPerBatch.keySet().forEach( batch -> {
-            /*
-            System.out.println("1batch: "+batch);
-            System.out.println("1batchSeqId.get(batch): "+batchSeqId.get(batch));
-            System.out.println("1indicatorsPerBatch.get(batch): "+indicatorsPerBatch.get(batch));
-*/
-
-            ResultQ1 q1Result = ResultQ1.newBuilder()
-                    .setBenchmarkId(newBenchmark.getId()) //set the benchmark id
-                    .setBatchSeqId(batchSeqId.get(batch)) //set the sequence number
-                    .addAllIndicators(indicatorsPerBatch.get(batch))
-                    .build();
-            challengeClient.resultQ1(q1Result);
-
-        });
-
-        crossoverEventsPerBatch.keySet().forEach( batch -> {
-            /*
-            System.out.println("2batch: "+batch);
-            System.out.println("2batchSeqId.get(batch): "+batchSeqId.get(batch));
-            System.out.println("2indicatorsPerBatch.get(batch): "+crossoverEventsPerBatch.get(batch));
-
-             */
-            ResultQ2 q2Result = ResultQ2.newBuilder()
-                    .setBenchmarkId(newBenchmark.getId()) //set the benchmark id
-                    .setBatchSeqId(batchSeqId.get(batch)) //set the sequence number
-                    .addAllCrossoverEvents(crossoverEventsPerBatch.get(batch))
-                    .build();
-            challengeClient.resultQ2(q2Result);
-
-        });
+        //indicatorsPerBatch.keySet().forEach(System.out::println);
 
         if (mustStop){
             challengeClient.endBenchmark(newBenchmark);
@@ -240,119 +240,6 @@ public class KafkaConsumerResults {
 
     }
 
-    //putting results from batch longer than one window inside of "intermediateResults" map to collect them later on
-    public static void putIntoMap(String str, int longBatch) {
-
-        List<Timestamp> buysTs = null;
-        List<Timestamp> sellsTs = null;
-
-        //String[] lines = str.split(",");
-        //for (String line : lines) {
-            //String[] values = line.split(";");
-            String[] values = str.split(",");
-            if (Integer.valueOf(values[1])==longBatch){
-                intermediateResults.put(new Tuple2<>(Integer.valueOf(values[1]),values[2]), new Tuple2<>(Float.valueOf(values[3]),Float.valueOf(values[4])));
-                //todo: perche non ci sono le liste di ts??
-                //retrieving crossovers ts lists (if any)
-                if (!values[5].equals("null")) {
-                    //parse ts list
-                    buysTs = createTimestampsList(values[5]);
-                }
-                else if(!values[6].equals("null")){
-                    sellsTs = createTimestampsList(values[6]);
-                }
-                intermediateResults2.put(new Tuple2<>(Integer.valueOf(values[1]),values[2]), new Result(values[2], Float.valueOf(values[3]), Float.valueOf(values[4]), buysTs, sellsTs));
-            }
-        //}
-    }
-
-    //populates finalResults map
-    public static List<Integer> calculateResults(String str, int longBatch) throws IOException, InterruptedException {
-        //System.out.println("Collecting results!");
-        Result res;
-        List<Integer> batchesInCurrentWindow = new ArrayList<>();
-        List<Timestamp> buysTs = null;
-        List<Timestamp> sellsTs = null;
-        finalResults = new HashMap<>();     //every window has a new map
-
-        //String[] lines = str.split(",");       //splitting the whole string (contains ALL results, separated from ",")
-        String[] values = str.split(",");       //splitting the whole string (contains ALL results, separated from ",")
-        //for (String line : lines) {
-            //String[] values = line.split(";");  //splitting each field in one single line
-
-            int currBatch = Integer.valueOf(values[1]);
-            if (!batchesInCurrentWindow.contains(currBatch)){
-                batchesInCurrentWindow.add(currBatch);
-            }
-
-            //retrieving crossovers ts lists (if any)
-            if (!values[5].equals("null")) {
-                //parse ts list
-                buysTs = createTimestampsList(values[5]);
-            }
-            else if(!values[6].equals("null")){
-                sellsTs = createTimestampsList(values[6]);
-            }
-
-            //if current line's batch equals longBatch get from intermediateResults map
-            //the key <longBatch,currentSymbol> ad add its emas values to a Result object list in order to populate finalResults map.
-            if(currBatch==longBatch) {
-                System.out.println("value= "+ values[0]+","+values[1]+","+values[2]+","+values[3]+","+values[4]+","+values[5]+","+values[6]);
-                Tuple2<Float, Float> emas = intermediateResults.get(new Tuple2<>(longBatch, values[2]));
-                res = new Result(values[2], emas._1, emas._2, null, null);
-                res = intermediateResults2.get(new Tuple2<>(longBatch, values[2]));
-            } else {
-                res = new Result(values[2], Float.parseFloat(values[3]), Float.parseFloat(values[4]), null,null);
-            }
-
-            if (buysTs!=null){
-                res.setBuys(buysTs);
-                //System.out.println("res BUY: "+res);
-            } else if (sellsTs!=null){
-                res.setSells(sellsTs);
-            }
-
-            if(!finalResults.containsKey(currBatch)){
-                List<Result> resList = new ArrayList<>();
-                resList.add(res);
-                finalResults.put(currBatch,resList);
-            } else {
-                List<Result> resList = finalResults.get(currBatch);
-                resList.add(res);
-                finalResults.put(currBatch,resList);
-            }
-
-            //finish analyzing single line
-            buysTs = null;
-            sellsTs = null;
-
-        //} //finish analyzing all lines
-
-        return batchesInCurrentWindow;
-    }
-
-    public static List<Indicator> calculateIndicators(int i) {
-
-        List<Indicator> indicatorsList = new ArrayList<>();
-        List<Result> resList = finalResults.get(i);
-
-        resList.stream().forEach(res -> {
-            //indicator
-            Indicator.Builder ind = Indicator.newBuilder();
-            ind.setSymbol(res.getSymbol());
-            ind.setEma38(Float.valueOf(res.getEma38()));
-            ind.setEma100(Float.valueOf(res.getEma100()));
-            //add list indicator
-            indicatorsList.add(ind.build());
-
-
-        } );
-
-        //here we get list<Indicator> of #i batch
-
-        return indicatorsList;
-
-    }
 
     public static List<Timestamp> createTimestampsList(String str){
 
@@ -378,45 +265,20 @@ public class KafkaConsumerResults {
         return list;
     }
 
-    //given timestamp lastTs, this method calculates upper bound window (every 5 mins)
-    public static Timestamp windowProducingResult(Timestamp lastTs,Timestamp nextWindow){
-        long res = nextWindow.getTime();
-        while(true){
-            res = res + TimeUnit.MINUTES.toMillis(windowLen);
-            //System.out.println("res = "+new Timestamp(res));
-            if (lastTs.compareTo(new Timestamp(res))<0){
-                break;
-            }
-        }
-        return new Timestamp(res);
+    public Benchmark getNewBenchmark() {
+        return newBenchmark;
     }
 
-    public static List<CrossoverEvent> calculateCrossoverEvents(int i) {
-        //System.out.println("STO IN CROSSOVERS!!!!!!!!!!! + i="+i);
-
-        List<CrossoverEvent> crossoverEventList = new ArrayList<>();
-
-        List<Result> resList = finalResults.get(i);
-        resList.stream().forEach(res -> {
-            CrossoverEvent.Builder cross = CrossoverEvent.newBuilder();
-            cross.setSymbol(res.getSymbol());
-            if (res.getBuys()!=null){  //if list is null that symbol has no crossovers
-                //if it does, we put each one of them inside CrossoverEvent through setTs
-
-                for(Timestamp ts: res.getBuys()){  //set buys (at maximum, they're 3)
-                    com.google.protobuf.Timestamp timestamp = com.google.protobuf.Timestamp.newBuilder().setSeconds(ts.getTime()).build();
-                    cross.setTs(timestamp);
-                }
-            }
-            if (res.getSells()!=null){
-                for(Timestamp ts: res.getSells()){  //set sells (at maximum, they're 3)
-                    com.google.protobuf.Timestamp timestamp = com.google.protobuf.Timestamp.newBuilder().setSeconds(ts.getTime()).build();
-                    cross.setTs(timestamp);
-                }
-            }
-
-            crossoverEventList.add(cross.build());
-        });
-        return new ArrayList<>();
+    public void setNewBenchmark(Benchmark newBenchmark) {
+        this.newBenchmark = newBenchmark;
     }
+
+    public ChallengerGrpc.ChallengerBlockingStub getChallengeClient() {
+        return challengeClient;
+    }
+
+    public void setChallengeClient(ChallengerGrpc.ChallengerBlockingStub challengeClient) {
+        this.challengeClient = challengeClient;
+    }
+
 }

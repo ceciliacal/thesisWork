@@ -53,7 +53,7 @@ public class MyAccumulator implements Serializable {
             batches = new ArrayList<>();
             batches.add(value.getBatch());
         }
-        System.out.println("symbolInBatches: "+symbolInBatches);
+        //System.out.println("symbolInBatches: "+symbolInBatches);
         symbolInBatches.put(value.getSymbol(),batches);
         lastPricePerSymbol.put(value.getSymbol(), value.getLastTradePrice());
 

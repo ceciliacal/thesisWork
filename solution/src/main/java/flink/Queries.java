@@ -57,10 +57,12 @@ public class Queries {
                         .process(new ProcessWindowFunction<FinalOutput, String, Integer, TimeWindow>() {
                             @Override
                             public void process(Integer batchKey, ProcessWindowFunction<FinalOutput, String, Integer, TimeWindow>.Context context, Iterable<FinalOutput> elements, Collector<String> out) throws Exception {
-                                Date start = new Date(context.window().getStart());
+                                Timestamp start = new Timestamp(context.window().getStart());
+                                Timestamp end = new Timestamp(context.window().getEnd());
                                 String startWindow = start.toString();
-                                System.out.println("key = "+batchKey+" "+new Date(context.window().getStart()));
-                                //FinalOutput element = elements.iterator().next();
+                                String endWindow = end.toString();
+
+                                System.out.println("key = "+batchKey+" "+start);
 
                                 elements.forEach( element -> {
                                     if (batchKey == element.getBatch()){
@@ -72,7 +74,7 @@ public class Queries {
                                                 element.getSymbol_WindowEma100().get(element.getSymbol())._2+","+
                                                 element.getSymbol_buyCrossovers().get(element.getSymbol())+","+
                                                 element.getSymbol_sellCrossovers().get(element.getSymbol())+","+
-                                                startWindow;
+                                                end;
                                 ;
                                         //System.out.println("stringToSend = "+stringToSend);
                                         out.collect(stringToSend);
