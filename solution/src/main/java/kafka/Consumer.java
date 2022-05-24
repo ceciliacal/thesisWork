@@ -26,15 +26,16 @@ public class Consumer {
     //creating kafka consumer to listen for data in kafka broker
     public static void main(String[] args) throws Exception {
 
-        String ip = args[0];
-        String port = args[1];
-        kafkaAddress = ip+":"+port;
-        //int parallelism = Integer.parseInt(args[1]);
-        int parallelism = 3;
-        System.out.println("in CONSUMER: kafkaAddress= "+kafkaAddress);
-        System.out.println("in CONSUMER: port= "+port);
-        System.out.println("in CONSUMER: parallelism= "+parallelism);
+        String ip;
+        String port;
+        int parallelism;
 
+        ip = args[0];
+        port = args[1];
+        kafkaAddress = ip+":"+port;
+        parallelism = Integer.parseInt(args[2]);
+        System.out.println("in CONSUMER: kafkaAddress= "+kafkaAddress);
+        System.out.println("in CONSUMER: parallelism= "+parallelism);
 
         FlinkKafkaConsumer<String> consumer = createConsumer();
         consumer.assignTimestampsAndWatermarks(WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofMillis(1)));
@@ -70,11 +71,9 @@ public class Consumer {
     }
 
     public static StreamExecutionEnvironment createEnviroment(){
-        System.out.println("--enviroment created---");
-
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-
+        System.out.println("--enviroment created---");
         return env;
     }
 

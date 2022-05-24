@@ -30,30 +30,25 @@ public class Producer {
         return new KafkaProducer<>(props);
     }
 
-    public static void publishMessages(String kafkaAddress) throws IOException {
+    public static void publishMessages(String kafkaAddress){
 
         final org.apache.kafka.clients.producer.Producer<String, String> producer = createProducer(kafkaAddress);
         System.out.println("------------------------START----------------------");
 
         try {
-            //stream verso file csv
             Stream<String> FileStream = Files.lines(Paths.get(Config.dataset_path+".csv"));
-
-
-            //rimozione dell'header e lettura del file
+            //reading file
             FileStream.forEach(line -> {
-                String[] fields = line.split(",");
 
-                String tsCurrent = fields[2];    //timestamp linea corrente (in lettura)
+                String[] fields = line.split(",");
+                String tsCurrent = fields[2];    //current row timestamp
                 Timestamp eventTime = stringToTimestamp(tsCurrent,0);
+                ProducerRecord<String, String> CsvRecord = new ProducerRecord<>( Config.TOPIC, 0, eventTime.getTime(), fields[4], line);
 
                 //System.out.println("eventTime: "+eventTime);
                 //System.out.println("line: " + line);
 
-                //invio dei messaggi
-                ProducerRecord<String, String> CsvRecord = new ProducerRecord<>( Config.TOPIC, 0, eventTime.getTime(), fields[4], line);
-
-                //invio record
+                //sending record
                 producer.send(CsvRecord, (metadata, exception) -> {
                     if(metadata != null){
                         //successful writes
@@ -76,7 +71,6 @@ public class Producer {
     public static Timestamp stringToTimestamp(String strDate, int invoker){
 
         SimpleDateFormat dateFormat;
-
         if (invoker==0){
             dateFormat = new SimpleDateFormat(Config.pattern2);
         } else {
@@ -97,10 +91,10 @@ public class Producer {
 
 
     public static void main(String[] args) throws Exception {
-        //String ip = args[0];
-        //String port = args[1];
-        //kafkaAddress = ip+":"+port;
-        kafkaAddress = "184.73.80.39:9092";
+        String ip = args[0];
+        String port = args[1];
+        kafkaAddress = ip+":"+port;
+        //kafkaAddress = "184.73.80.39:9092";
         publishMessages(kafkaAddress);
     }
 }

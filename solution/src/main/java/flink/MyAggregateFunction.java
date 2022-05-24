@@ -14,7 +14,6 @@ public class MyAggregateFunction implements AggregateFunction<Event, MyAccumulat
 
     @Override
     public MyAccumulator add(Event value, MyAccumulator accumulator) {
-        //System.out.println("-- IN AGGREGATE: event = "+value.getSymbol()+" "+value.getSecType()+" "+value.getTimestamp());
         accumulator.add(value);
         return accumulator;
 
@@ -22,7 +21,6 @@ public class MyAggregateFunction implements AggregateFunction<Event, MyAccumulat
 
     @Override
     public OutputQuery getResult(MyAccumulator accumulator) {
-        //System.out.println("STO IN AGGREGATE GET RESULT!!!!!!");
         return new OutputQuery(accumulator.getLastPricePerSymbol(), accumulator.getSymbolInBatches());
     }
 
