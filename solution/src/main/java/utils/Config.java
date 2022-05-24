@@ -3,7 +3,7 @@ package utils;
 
 public interface Config {
     //public static String KAFKA_BROKERS = "kafka1:19091";
-    public static String KAFKA_BROKERS = "localhost:9091";
+    //public static String KAFKA_BROKERS = "localhost:9091";
     public static String dataset_path = "primiDueGiorniRPC";
     public static String TOPIC = "debsTopic";
     public static String CLIENT_ID = "myclient";

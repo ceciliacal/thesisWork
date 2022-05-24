@@ -21,14 +21,17 @@ import java.util.Properties;
 public class Consumer {
 
     private static long startTime;
+    private static String kafkaAddress;
 
     //creating kafka consumer to listen for data in kafka broker
     public static void main(String[] args) throws Exception {
 
-        //int port = Integer.parseInt(args[0]);
+        String ip = args[0];
+        String port = args[1];
+        kafkaAddress = ip+":"+port;
         //int parallelism = Integer.parseInt(args[1]);
-        int port = 6668;
         int parallelism = 3;
+        System.out.println("in CONSUMER: kafkaAddress= "+kafkaAddress);
         System.out.println("in CONSUMER: port= "+port);
         System.out.println("in CONSUMER: parallelism= "+parallelism);
 
@@ -43,7 +46,7 @@ public class Consumer {
                 .map(new MapFunctionEvent());
 
         //start queries calculation
-        Queries.runQueries(stream,port);
+        Queries.runQueries(stream, kafkaAddress);
         env.setParallelism(parallelism);
         env.execute("debsTest");
 
@@ -52,7 +55,7 @@ public class Consumer {
     public static FlinkKafkaConsumer<String> createConsumer() throws Exception {
         //properties creation
         final Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, Config.KAFKA_BROKERS);
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaAddress);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaConsumerGroup");
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());

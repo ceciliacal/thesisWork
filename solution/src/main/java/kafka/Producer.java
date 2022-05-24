@@ -1,260 +1,76 @@
 package kafka;
 
-import de.tum.i13.challenge.*;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
-
-import scala.Tuple2;
 import utils.Config;
 
-import java.io.PrintWriter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.Properties;
+import java.util.stream.Stream;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 public class Producer {
 
-    protected static final Integer windowLen = 5; //minutes
-    protected static Map<Integer,Long> batchSeqId;       //to retrieve each bach when sending aggregated results
-    protected static Map<Tuple2<Integer, String>, Tuple2<Float, Float>> intermediateResults;      //K: #batch+symbol V:ema38+ema100
-    protected static Timestamp finalWindowLongBatch = null ;
-    protected static Map<Integer,List<Result>> finalResults;
-    protected static Integer longBatch;
-    protected static Timestamp currentTimestamp;
-    protected static Integer cnt;
-    protected static Timestamp prev;
-    protected static boolean mustStop;
-    protected static TreeMap<Integer, Tuple2<Timestamp, Boolean>> firingWindows; //last window upperBound for each batch (e.g. for batch0 is 8.20am)
-
-    protected static Map<Tuple2<Integer, String>, Result> intermediateResults2;      //K: #batch+symbol V:Result
-
-
+    private static String kafkaAddress;
 
     //creates kafka producer
-    public static org.apache.kafka.clients.producer.Producer<String, String> createProducer() {
+    public static org.apache.kafka.clients.producer.Producer<String, String> createProducer(String kafkaAddress) {
         Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, Config.KAFKA_BROKERS);
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaAddress);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, "KafkaProducer");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         return new KafkaProducer<>(props);
     }
 
+    public static void publishMessages(String kafkaAddress) throws IOException {
 
-    //kafka producer streams messages to kafka topic reading csv file
-    public static void main(String[] args) throws Exception {
+        final org.apache.kafka.clients.producer.Producer<String, String> producer = createProducer(kafkaAddress);
+        System.out.println("------------------------START----------------------");
 
-        final org.apache.kafka.clients.producer.Producer<String, String> producer = createProducer();
-        batchSeqId = new HashMap<>();
-        intermediateResults = new HashMap<>();
-        finalResults = new HashMap<>();
-        firingWindows = new TreeMap<>();
-        longBatch = -1;
-        mustStop = false;
-
-        //int port = Integer.parseInt(args[0]);
-        int port = 6668;
-        //System.out.println("arg = "+args[0]);
-
-        //============================ starts MAIN gRPC ============================
-
-        ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("challenge.msrg.in.tum.de", 5023)
-                //.forAddress("192.168.1.4", 5023) //in case it is used internally
-                .usePlaintext()
-                .build();
+        try {
+            //stream verso file csv
+            Stream<String> FileStream = Files.lines(Paths.get(Config.dataset_path+".csv"));
 
 
-        var challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
-                .withMaxInboundMessageSize(100 * 1024 * 1024)
-                .withMaxOutboundMessageSize(100 * 1024 * 1024);
+            //rimozione dell'header e lettura del file
+            FileStream.forEach(line -> {
+                String[] fields = line.split(",");
 
-        BenchmarkConfiguration bc = BenchmarkConfiguration.newBuilder()
-                .setBenchmarkName("Testrun " + new Date().toString())
-                .addQueries(Query.Q1)
-                .addQueries(Query.Q2)
-                .setToken("jkninvezfgvcwexklizimkoonqmudupq") //go to: https://challenge.msrg.in.tum.de/profile/
-                //.setBenchmarkType("evaluation") //Benchmark Type for evaluation
-                .setBenchmarkType("test") //Benchmark Type for testing
-                .build();
+                String tsCurrent = fields[2];    //timestamp linea corrente (in lettura)
+                Timestamp eventTime = stringToTimestamp(tsCurrent,0);
 
-        //Create a new Benchmark
-        Benchmark newBenchmark = challengeClient.createNewBenchmark(bc);
-        System.out.println("newBenchmark = "+newBenchmark);
+                //System.out.println("eventTime: "+eventTime);
+                //System.out.println("line: " + line);
 
-        //Start the benchmark
-        challengeClient.startBenchmark(newBenchmark);
+                //invio dei messaggi
+                ProducerRecord<String, String> CsvRecord = new ProducerRecord<>( Config.TOPIC, 0, eventTime.getTime(), fields[4], line);
 
-        KafkaConsumerResults kafkaConsumer = new KafkaConsumerResults(newBenchmark, challengeClient);
-        System.out.println("challengeClient = "+challengeClient);
-        /*
-        new Thread(()->{
-            try {
-                kafkaConsumer.runConsumer();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).start();
-
-         */
-
-
-        //PrintWriter writer = new PrintWriter("/tmp/procTimes.txt", "UTF-8");
-        PrintWriter writer = new PrintWriter("primiMille.csv", "UTF-8");
-
-        //Process the events
-        cnt = 0;
-        int i;
-        long currSeconds;
-        int num;
-        long start;
-        Timestamp nextWindow = null;
-        long next = 0;
-        SimpleDateFormat formatter = new SimpleDateFormat(Config.pattern);
-        int firstSendAfterReceive = 1;
-        long startProcTime = 0;
-        long resultsProcTime;
-        double timeToProcessAWindow;
-
-        while(true) {
-
-            String[][] value = {new String[6]};
-            final String[] valueToSend = new String[1];
-            Batch batch = challengeClient.nextBatch(newBenchmark);
-            if (batch==null){
-                batch = challengeClient.nextBatch(newBenchmark);
-            }
-
-            batchSeqId.put(cnt,batch.getSeqId());
-            num = batch.getEventsCount();
-
-            if (batch.getLast()) { //Stop when we get the last batch
-                System.out.println("Received lastbatch, finished!");
-                break;
-            }
-
-            //System.out.println("batch List: "+batch.getEventsList());
-            System.out.println("==== cnt: "+cnt);
-
-            //======= windows setup ========
-            if (cnt==0){
-                start = batch.getEvents(0).getLastTrade().getSeconds() * 1000L;
-                next = start + TimeUnit.MINUTES.toMillis(windowLen);
-                nextWindow = new Timestamp(next);
-                //System.out.println("nextWindow = "+nextWindow);
-            }
-            //==== end of windows setup =====
-
-            long startTsSeconds = batch.getEvents(0).getLastTrade().getSeconds();
-            Timestamp startTsBatch = stringToTimestamp(formatter.format(new Date(startTsSeconds * 1000L)),1);
-            System.out.println("startTsBatch = "+startTsBatch);
-
-            long lastTsSeconds = batch.getEvents(num-1).getLastTrade().getSeconds();
-            Timestamp lastTsBatch = stringToTimestamp(formatter.format(new Date(lastTsSeconds * 1000L)),1);
-            System.out.println("lastTsBatch = "+lastTsBatch);
-
-            if (lastTsSeconds - startTsSeconds > TimeUnit.MINUTES.toSeconds(windowLen)){
-                longBatch=cnt;
-                setFinalWindowLongBatch(windowProducingResult(lastTsBatch,nextWindow));
-                firingWindows.put(longBatch, new Tuple2<>(finalWindowLongBatch, false));
-            } else if (startTsBatch.compareTo(nextWindow)<0 && lastTsBatch.compareTo(nextWindow)>=0){
-                firingWindows.put(cnt, new Tuple2<>(windowProducingResult(lastTsBatch,nextWindow), false));
-            } else if (startTsBatch.compareTo(nextWindow)==0){
-                //System.out.println("pd!"+ cnt);
-                firingWindows.put(cnt, new Tuple2<>(windowProducingResult(lastTsBatch,nextWindow), false));
-                System.out.println(""+firingWindows.get(cnt));
-            } else {
-                firingWindows.put(cnt, new Tuple2<>(nextWindow,false));
-            }
-
-
-            for (i=0;i<num;i++){
-
-                currSeconds = batch.getEvents(i).getLastTrade().getSeconds();
-                currentTimestamp = stringToTimestamp(formatter.format(new Date(currSeconds * 1000L)),1);
-                Timestamp procTimestamp = new Timestamp(System.currentTimeMillis());
-                //System.out.println("procTimestamp = "+procTimestamp);
-                assert currentTimestamp != null;
-
-                //=========== send data ===========
-                value[0][0] = batch.getEvents(i).getSymbol();
-                value[0][1] = String.valueOf(batch.getEvents(i).getSecurityType());
-                value[0][2] = String.valueOf(currentTimestamp);
-                value[0][3] = String.valueOf(batch.getEvents(i).getLastTradePrice());
-                value[0][4] = String.valueOf(batch.getSeqId());     //batch number
-                value[0][5] = String.valueOf(i);       //event number inside of current batch
-                //value[0][6] = String.valueOf(procTimestamp);     //processing ts
-                valueToSend[0] = String.join(",", value[0]);
-
-                ProducerRecord<String,String> producerRecord= new ProducerRecord<>(Config.TOPIC, 0, currentTimestamp.getTime(), String.valueOf(cnt), valueToSend[0]);
-
-                if (firstSendAfterReceive == 1){
-                    startProcTime = System.currentTimeMillis();
-                    //System.out.println("startProcTime = "+new Timestamp(startProcTime)+"   cnt: "+cnt);
-                    //System.out.println("SENDING: ->  key: "+producerRecord.key()+" value: "+ producerRecord.value());
-                    firstSendAfterReceive = 0;
-                }
-                producer.send(producerRecord, (metadata, exception) -> {
+                //invio record
+                producer.send(CsvRecord, (metadata, exception) -> {
                     if(metadata != null){
                         //successful writes
-                        //System.out.println("msgSent: ->  key: "+producerRecord.key()+" value: "+ producerRecord.value());
-                        writer.println(producerRecord.value());
+                        System.out.println("CsvData: -> "+ CsvRecord.key()+" | "+ CsvRecord.value());
                     }
                     else{
                         //unsuccessful writes
-                        System.out.println("Error Sending Csv Record -> key: " + producerRecord.key()+" value: " + producerRecord.value());
+                        System.out.println("Error Sending Csv Record -> "+ CsvRecord.value());
                     }
                 });
+            });
 
-                //=========== end of send data ===========
-
-                if (currentTimestamp.compareTo(nextWindow)>0) {
-                    prev = nextWindow;
-                    nextWindow = windowProducingResult(currentTimestamp, nextWindow);
-                }
-
-
-            }
-
-            System.out.println("Sent batch #" + cnt);
-            ++cnt;
-
-            /*
-            if(cnt > 1000) { //for testing you can stop early, in an evaluation run, run until getLast() is True.
-                break;
-            }
-
-             */
-
-
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        writer.close();
-        mustStop = true;
+        System.out.println("------------------------END----------------------");
 
-        System.out.println("firingWindows: "+firingWindows);
-        //challengeClient.endBenchmark(newBenchmark);
-        System.out.println("ended Benchmark");
-        producer.close();
-
-    }
-
-
-    //given timestamp lastTs, this method calculates upper bound window (every 5 mins)
-    public static Timestamp windowProducingResult(Timestamp lastTs,Timestamp nextWindow){
-        long res = nextWindow.getTime();
-        while(true){
-            res = res + TimeUnit.MINUTES.toMillis(windowLen);
-            //System.out.println("res = "+new Timestamp(res));
-            if (lastTs.compareTo(new Timestamp(res))<0){
-                break;
-            }
-        }
-        return new Timestamp(res);
     }
 
     public static Timestamp stringToTimestamp(String strDate, int invoker){
@@ -279,37 +95,12 @@ public class Producer {
     }
 
 
-    public Map<Integer, Long> getBatchSeqId() {
-        return batchSeqId;
-    }
 
-    public void setBatchSeqId(Map<Integer, Long> batchSeqId) {
-        this.batchSeqId = batchSeqId;
+    public static void main(String[] args) throws Exception {
+        //String ip = args[0];
+        //String port = args[1];
+        //kafkaAddress = ip+":"+port;
+        kafkaAddress = "184.73.80.39:9092";
+        publishMessages(kafkaAddress);
     }
-
-    public static Map<Tuple2<Integer, String>, Tuple2<Float, Float>> getIntermediateResults() {
-        return intermediateResults;
-    }
-
-    public static void setIntermediateResults(Map<Tuple2<Integer, String>, Tuple2<Float, Float>> intermediateResults) {
-        Producer.intermediateResults = intermediateResults;
-    }
-
-    public static Timestamp getFinalWindowLongBatch() {
-        return finalWindowLongBatch;
-    }
-
-    public static void setFinalWindowLongBatch(Timestamp finalWindowLongBatch) {
-        Producer.finalWindowLongBatch = finalWindowLongBatch;
-    }
-
-    public static Map<Integer,List<Result>> getFinalResults() {
-        return finalResults;
-    }
-
-    public static void setFinalResults(Map<Integer,List<Result>> finalResults) {
-        Producer.finalResults = finalResults;
-    }
-
 }
-
