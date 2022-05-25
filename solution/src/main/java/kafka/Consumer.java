@@ -14,6 +14,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import utils.Config;
 import data.Event;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +32,7 @@ public class Consumer {
     public static void main(String[] args) throws Exception {
 
         int parallelism = 3;
-        try (InputStream input = new FileInputStream("config.properties")) {
+        try (InputStream input = new FileInputStream("/home/configProp/config.properties")) {
 
             Properties prop = new Properties();
             // load a properties file
