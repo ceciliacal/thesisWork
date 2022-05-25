@@ -98,7 +98,7 @@ public class Producer {
     public static void main(String[] args) throws Exception {
 
         kafkaPort = "9092";
-        try (InputStream input = new FileInputStream("config.properties")) {
+        try (InputStream input = new FileInputStream("/home/configProp/config.properties")) {
 
             Properties prop = new Properties();
             // load a properties file
