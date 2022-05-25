@@ -7,7 +7,9 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import utils.Config;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
@@ -19,6 +21,9 @@ import java.util.*;
 public class Producer {
 
     private static String kafkaAddress;
+    private static String kafkaPort;
+    private static String kafkaTopic;
+
 
     //creates kafka producer
     public static org.apache.kafka.clients.producer.Producer<String, String> createProducer(String kafkaAddress) {
@@ -43,7 +48,7 @@ public class Producer {
                 String[] fields = line.split(",");
                 String tsCurrent = fields[2];    //current row timestamp
                 Timestamp eventTime = stringToTimestamp(tsCurrent,0);
-                ProducerRecord<String, String> CsvRecord = new ProducerRecord<>( Config.TOPIC, 0, eventTime.getTime(), fields[4], line);
+                ProducerRecord<String, String> CsvRecord = new ProducerRecord<>(kafkaTopic, 0, eventTime.getTime(), fields[4], line);
 
                 //System.out.println("eventTime: "+eventTime);
                 //System.out.println("line: " + line);
@@ -91,10 +96,25 @@ public class Producer {
 
 
     public static void main(String[] args) throws Exception {
-        String ip = args[0];
-        String port = args[1];
-        kafkaAddress = ip+":"+port;
-        //kafkaAddress = "184.73.80.39:9092";
+
+        kafkaPort = "9092";
+        try (InputStream input = new FileInputStream("config.properties")) {
+
+            Properties prop = new Properties();
+            // load a properties file
+            prop.load(input);
+
+            // get the property value and print it out
+            kafkaAddress = prop.getProperty("kafkaIpAddress")+":"+kafkaPort;
+            kafkaTopic = prop.getProperty("topic");
+
+            System.out.println("in PRODUCER: kafkaAddress= "+kafkaAddress);
+            System.out.println("in PRODUCER: topic= "+kafkaTopic);
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
         publishMessages(kafkaAddress);
     }
 }

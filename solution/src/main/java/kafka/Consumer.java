@@ -14,6 +14,9 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import utils.Config;
 import data.Event;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Duration;
 import java.util.Properties;
 
@@ -22,20 +25,31 @@ public class Consumer {
 
     private static long startTime;
     private static String kafkaAddress;
+    private static String kafkaTopic;
 
     //creating kafka consumer to listen for data in kafka broker
     public static void main(String[] args) throws Exception {
 
-        String ip;
-        String port;
-        int parallelism;
+        int parallelism = 3;
+        try (InputStream input = new FileInputStream("config.properties")) {
 
-        ip = args[0];
-        port = args[1];
-        kafkaAddress = ip+":"+port;
-        parallelism = Integer.parseInt(args[2]);
-        System.out.println("in CONSUMER: kafkaAddress= "+kafkaAddress);
-        System.out.println("in CONSUMER: parallelism= "+parallelism);
+            Properties prop = new Properties();
+            // load a properties file
+            prop.load(input);
+
+            // get the property value and print it out
+            kafkaAddress = prop.getProperty("kafkaIpAddress")+":"+Config.KAFKA_PORT;
+            kafkaTopic = prop.getProperty("topic");
+            parallelism = Integer.parseInt(prop.getProperty("parallelism"));
+
+            System.out.println("in CONSUMER: kafkaAddress= "+kafkaAddress);
+            System.out.println("in CONSUMER: parallelism= "+parallelism);
+            System.out.println("in CONSUMER: topic= "+kafkaTopic);
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
 
         FlinkKafkaConsumer<String> consumer = createConsumer();
         consumer.assignTimestampsAndWatermarks(WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofMillis(1)));
@@ -63,7 +77,7 @@ public class Consumer {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
 
         //consumer creation
-        FlinkKafkaConsumer<String> myConsumer = new FlinkKafkaConsumer<>(Config.TOPIC, new SimpleStringSchema(), props);
+        FlinkKafkaConsumer<String> myConsumer = new FlinkKafkaConsumer<>(kafkaTopic, new SimpleStringSchema(), props);
 
         System.out.println("---consumer created---");
         return myConsumer;
