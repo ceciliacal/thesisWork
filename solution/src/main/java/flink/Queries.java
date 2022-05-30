@@ -18,6 +18,9 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import utils.Config;
 import data.Event;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Properties;
