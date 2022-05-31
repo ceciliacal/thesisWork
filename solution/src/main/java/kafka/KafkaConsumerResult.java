@@ -19,16 +19,13 @@ public class KafkaConsumerResult {
     static Map<Integer, Tuple2<Long, Timestamp>> batchStartTime;
     static Map<Integer, Tuple2<Long, Timestamp>> batchEndTime;
     static List<String> listProcTimes;
-    static boolean hasFinished;
 
-    public KafkaConsumerResult(Map<Integer, Tuple2<Long, Timestamp>> batchProcTime, String myTopic, String myKafkaAddress, boolean producerHasFinished) {
+    public KafkaConsumerResult(Map<Integer, Tuple2<Long, Timestamp>> batchProcTime, String myTopic, String myKafkaAddress) {
         topic = myTopic;
         BOOTSTRAP_SERVERS = myKafkaAddress;
         batchStartTime = batchProcTime;
         batchEndTime = new HashMap<>();
         listProcTimes = new ArrayList<>();
-        hasFinished = producerHasFinished;
-
     }
 
     private static org.apache.kafka.clients.consumer.Consumer<Long, String> createConsumer() {
@@ -50,8 +47,7 @@ public class KafkaConsumerResult {
 
         final org.apache.kafka.clients.consumer.Consumer<Long, String> consumer = createConsumer();
 
-        //final int giveUp = 100;
-        final int giveUp = 50;
+        final int giveUp = 200;
         int noRecordsCount = 0;
 
         while (true) {
@@ -83,7 +79,7 @@ public class KafkaConsumerResult {
                         System.out.println("--adding...    " + batch + ": " + batchStartTime.get(batch)._2 + " " + currentTs + " " + diffTime);
                     }
                 }
-                System.out.println("batchStartTime.size(): "+batchStartTime.size()+"  batchEndTime.containsKey(batch): "+batchEndTime.containsKey(batch));
+                //System.out.println("batchStartTime.size(): "+batchStartTime.size()+"  batchEndTime.containsKey(batch): "+batchEndTime.containsKey(batch));
             });
 
             consumer.commitAsync();
@@ -91,17 +87,21 @@ public class KafkaConsumerResult {
         }
 
         System.out.println("sto fuori dal while");
-        
-        if (hasFinished){
-            PrintWriter writer = null;
-            for (String listProcTime : listProcTimes) {
-                writer = new PrintWriter("results.txt");
-                writer.append(listProcTime);
+
+        while (true){
+            if (Producer.hasFinished){
+                System.out.println("sto nell IF has finished");
+                PrintWriter writer = new PrintWriter("results.txt");
+                for (String listProcTime : listProcTimes) {
+                    writer.append(listProcTime);
+                }
+                assert writer != null;
+                writer.close();
+                System.out.println("File is done");
+                break;
             }
-            assert writer != null;
-            writer.close();
-            System.out.println("File is done");
         }
+
 
     }
 

@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import java.util.*;
 
@@ -22,7 +23,7 @@ public class Producer {
     private static String kafkaPort;
     private static String kafkaTopic;
     private static Map<Integer, Tuple2<Long, Timestamp>> batchProcTime;       //key: batch number, value: processing start
-    static boolean hasFinished;
+    protected static volatile boolean hasFinished;
 
     //creates kafka producer
     public static org.apache.kafka.clients.producer.Producer<String, String> createProducer(String kafkaAddress) {
@@ -112,7 +113,9 @@ public class Producer {
 
         kafkaPort = "9092";
         hasFinished = false;
-        try (InputStream input = new FileInputStream("config.properties")) {
+
+        //try (InputStream input = new FileInputStream("config.properties")) {
+        try (InputStream input = new FileInputStream("/home/configProp/config.properties")) {
 
             Properties prop = new Properties();
             // load a properties file
@@ -130,7 +133,7 @@ public class Producer {
         }
 
         batchProcTime = new HashMap<>();
-        KafkaConsumerResult kafkaConsumer = new KafkaConsumerResult(batchProcTime, Config.TOPIC_RES, kafkaAddress, hasFinished);
+        KafkaConsumerResult kafkaConsumer = new KafkaConsumerResult(batchProcTime, Config.TOPIC_RES, kafkaAddress);
         new Thread(()->{
             try {
                 kafkaConsumer.runConsumer();
