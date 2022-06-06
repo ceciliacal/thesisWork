@@ -3,6 +3,7 @@ package flink;
 import data.Event;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,9 +29,12 @@ public class MyAccumulator implements Serializable {
     private Map<String, Float> lastPricePerSymbol;      //K:symbol - V:last price
     private Map<String, List<Integer>> symbolInBatches; //K:symbol - V:list of batches num
 
+    private Map<String, Timestamp> timeBatch;           //K:batchNum - V:timestamp che prendo dal Map;
+
     public MyAccumulator(){
         this.lastPricePerSymbol = new HashMap<>();
         this.symbolInBatches = new HashMap<>();
+        this.timeBatch = new HashMap<>();
     }
 
     public void add(Event value) {
@@ -57,6 +61,13 @@ public class MyAccumulator implements Serializable {
         symbolInBatches.put(value.getSymbol(),batches);
         lastPricePerSymbol.put(value.getSymbol(), value.getLastTradePrice());
 
+        //timeBatch.put(value.getSymbol()+value.getBatch(), new Timestamp(System.currentTimeMillis()));
+        if (value.getCurrTime()!=null){
+            timeBatch.put(value.getBatch().toString(), value.getCurrTime()._2);
+            System.out.println("timeBatch= "+timeBatch+"  currValue= "+value.getSymbol());
+        }
+
+
     }
 
 
@@ -74,6 +85,14 @@ public class MyAccumulator implements Serializable {
 
     public void setSymbolInBatches(Map<String, List<Integer>> symbolInBatches) {
         this.symbolInBatches = symbolInBatches;
+    }
+
+    public Map<String, Timestamp> getTimeBatch() {
+        return timeBatch;
+    }
+
+    public void setTimeBatch(Map<String, Timestamp> timeBatch) {
+        this.timeBatch = timeBatch;
     }
 }
 

@@ -1,5 +1,6 @@
 package data;
 
+import scala.Tuple2;
 import utils.Config;
 
 import java.sql.Timestamp;
@@ -15,6 +16,7 @@ public class Event {
     String      strTimestamp;
     float       lastTradePrice;
     Integer     numEvent;
+    Tuple2<Long,Timestamp> currTime;
 
 
 
@@ -98,10 +100,17 @@ public class Event {
         this.timestamp = timestamp;
     }
 
+    public Tuple2<Long, Timestamp> getCurrTime() {
+        return currTime;
+    }
+
+    public void setCurrTime(Tuple2<Long, Timestamp> currTime) {
+        this.currTime = currTime;
+    }
 
     /*
-        Creates Timestamp object from symbol's last received update
-         */
+                Creates Timestamp object from symbol's last received update
+                 */
     public static Timestamp createTimestamp(String date, String time) {
 
         String dateTime = date+" "+time;

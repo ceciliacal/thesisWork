@@ -21,7 +21,7 @@ public class MyAggregateFunction implements AggregateFunction<Event, MyAccumulat
 
     @Override
     public OutputQuery getResult(MyAccumulator accumulator) {
-        return new OutputQuery(accumulator.getLastPricePerSymbol(), accumulator.getSymbolInBatches());
+        return new OutputQuery(accumulator.getLastPricePerSymbol(), accumulator.getSymbolInBatches(), accumulator.getTimeBatch());
     }
 
     @Override

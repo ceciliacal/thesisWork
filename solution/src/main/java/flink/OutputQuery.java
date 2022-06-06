@@ -2,6 +2,7 @@ package flink;
 
 import scala.Tuple2;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 
@@ -10,9 +11,12 @@ public class OutputQuery {
     private Map<String, Float> lastPricePerSymbol;
     private Map<String, List<Integer>> symbolInBatches;
 
-    public OutputQuery(Map<String, Float> price, Map<String, List<Integer>> batches) {
+    private Map<String, Timestamp> timeBatch;
+
+    public OutputQuery(Map<String, Float> price, Map<String, List<Integer>> batches, Map<String, Timestamp> time) {
         this.lastPricePerSymbol = price;
         this.symbolInBatches = batches;
+        this.timeBatch = time;
 
     }
 
@@ -27,8 +31,6 @@ public class OutputQuery {
             if (myEma38.containsKey(new Tuple2<>(s, currWindowCount-1))){
                 lastEma = myEma38.get(new Tuple2<>(s, currWindowCount-1));
             } else {
-                //todo: e se un simbolo stava in due finestre prima????
-                //lastEma = 0;
                 while (i!=currWindowCount){
                     if (myEma38.containsKey(new Tuple2<>(s, currWindowCount-i))){
                         lastEma = myEma38.get(new Tuple2<>(s, currWindowCount-i));
@@ -61,6 +63,14 @@ public class OutputQuery {
 
     public void setSymbolInBatches(Map<String, List<Integer>> symbolInBatches) {
         this.symbolInBatches = symbolInBatches;
+    }
+
+    public Map<String, Timestamp> getTimeBatch() {
+        return timeBatch;
+    }
+
+    public void setTimeBatch(Map<String, Timestamp> timeBatch) {
+        this.timeBatch = timeBatch;
     }
 
     @Override

@@ -3,6 +3,7 @@ package flink;
 
 
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.functions.windowing.ProcessAllWindowFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
@@ -17,6 +18,7 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import utils.Config;
 import data.Event;
+import utils.ProducerStringSerializationSchema;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
@@ -35,22 +37,54 @@ public class Queries {
 
         //KafkaSink<String> sink = KafkaSink.<String>builder().setBootstrapServers(kafkaAddress).setKafkaProducerConfig(getFlinkPropAsProducer()).setRecordSerializer(KafkaRecordSerializationSchema.builder().setTopic(Config.TOPIC_RES).setValueSerializationSchema(new SimpleStringSchema()).build()).setDeliverGuarantee(DeliveryGuarantee.AT_LEAST_ONCE).build();
 
-        DataStream<FinalOutput> finalOutputDataStream = keyedStream
+        DataStreamSink<String> finalOutputDataStream = keyedStream
                 .window(TumblingEventTimeWindows.of(Time.minutes(Config.windowLen)))
                 .aggregate(new MyAggregateFunction(), new MyProcessWindowFunction())
-                //.setParallelism(3)
                 .windowAll(TumblingEventTimeWindows.of(Time.minutes(Config.windowLen)))
-                .process(new ProcessAllWindowFunction<FinalOutput, FinalOutput, TimeWindow>() {
+                .process(new ProcessAllWindowFunction<FinalOutput, String, TimeWindow>() {
                     @Override
-                    public void process(ProcessAllWindowFunction<FinalOutput, FinalOutput, TimeWindow>.Context context, Iterable<FinalOutput> elements, Collector<FinalOutput> out) throws Exception {
+                    public void process(ProcessAllWindowFunction<FinalOutput, String, TimeWindow>.Context context, Iterable<FinalOutput> elements, Collector<String> out) throws Exception {
+                        Timestamp start = new Timestamp(context.window().getStart());
+                        Timestamp end = new Timestamp(context.window().getEnd());
 
                         //System.out.println("proc-time = "+new Timestamp(System.currentTimeMillis()));
                         System.out.println("Firing window: "+new Date(context.window().getStart()));
-                        elements.forEach(out::collect);
+
+                        elements.forEach( element -> {
+                            /*
+                            if(element.getTimeBatch().size()>0 ){
+                                System.out.println("inPROC: "+element.getBatch()+","+element.getTimeBatch()+","+element.getTimeBatch().values());
+                            }
+                             */
+
+                            if (element.getTimeBatch().containsKey(element.getBatch().toString())){
+                                long procStart = element.getTimeBatch().get(element.getBatch().toString()).getTime();
+                                long diff = System.currentTimeMillis() - procStart;
+                                System.out.println(element.getBatch()+","+element.getTimeBatch().get(element.getBatch().toString())+","+procStart+","+new Timestamp(System.currentTimeMillis())+","+System.currentTimeMillis()+","+diff);
+                            }
+
+                            String stringToSend =
+                                    element.getBatch()+","+
+                                            element.getSymbol()+","+
+                                            element.getSymbol_WindowEma38().get(element.getSymbol())._2+","+
+                                            element.getSymbol_WindowEma100().get(element.getSymbol())._2+","+
+                                            element.getSymbol_buyCrossovers().get(element.getSymbol())+","+
+                                            element.getSymbol_sellCrossovers().get(element.getSymbol())+","+
+                                            end;
+                            ;
+                            //System.out.println("stringToSend = "+stringToSend);
+                            out.collect(stringToSend);
+
+                        });
+
                     }
-                });
+                })
+                .addSink(new FlinkKafkaProducer<String>(Config.TOPIC_RES,
+                        new ProducerStringSerializationSchema(Config.TOPIC_RES),
+                        getFlinkPropAsProducer(kafkaAddress),
+                        FlinkKafkaProducer.Semantic.EXACTLY_ONCE));;
 
-
+/*
                 finalOutputDataStream
                 .keyBy(FinalOutput::getBatch)
                 .window(TumblingEventTimeWindows.of(Time.minutes(Config.windowLen)))
@@ -87,7 +121,11 @@ public class Queries {
                         new utils.ProducerStringSerializationSchema(Config.TOPIC_RES),
                         getFlinkPropAsProducer(kafkaAddress),
                         FlinkKafkaProducer.Semantic.EXACTLY_ONCE));
+
+ */
     }
+
+
 
 
     //metodo che crea proprietà per creare sink verso kafka

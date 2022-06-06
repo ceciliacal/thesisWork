@@ -32,8 +32,8 @@ public class Consumer {
     public static void main(String[] args) throws Exception {
 
         int parallelism = 3;
-        try (InputStream input = new FileInputStream("/home/configProp/config.properties")) {
-        //try (InputStream input = new FileInputStream("config.properties")) {
+        try (InputStream input = new FileInputStream("config.properties")) {
+        //try (InputStream input = new FileInputStream("/home/configProp/config.properties")) {
 
             Properties prop = new Properties();
             // load a properties file
@@ -59,7 +59,6 @@ public class Consumer {
 
         //mapping data from source into datastream of Events
         DataStream<Event> stream = env.addSource(consumer)
-                .setParallelism(1)
                 .map(new MapFunctionEvent());
 
         //start queries calculation

@@ -74,7 +74,7 @@ public class MyProcessWindowFunction extends ProcessWindowFunction<OutputQuery, 
         if (count.get(s)>0){
             if (myEma38.containsKey(new Tuple2<>(s,count.get(s)-1)) && myEma100.containsKey(new Tuple2<>(s,count.get(s)-1))){
 
-                if (myEma38.get(new Tuple2<>(s,count.get(s))) > myEma100.get(new Tuple2<>(s,count.get(s)))) {
+                if (myEma38.get(new Tuple2<>(s,count.get(s))) > myEma100.get(new Tuple2<>(s,count.get(s)))){
                     if (myEma38.get(new Tuple2<>(s,count.get(s)-1)) <= myEma100.get(new Tuple2<>(s,count.get(s)-1))){
                         //buy
                         //System.out.println("BUY! "+s);
@@ -164,7 +164,7 @@ public class MyProcessWindowFunction extends ProcessWindowFunction<OutputQuery, 
 
         List<Integer> currBatches = symbolInBatches.get(s);
         currBatches.stream().forEach(batch -> {
-            FinalOutput finalOutput = new FinalOutput(s, batch, symbol_WindowEma38, symbol_WindowEma100, lastPricePerSymbol.get(s), symbol_buyCrossovers, symbol_sellCrossovers);
+            FinalOutput finalOutput = new FinalOutput(s, batch, symbol_WindowEma38, symbol_WindowEma100, lastPricePerSymbol.get(s), symbol_buyCrossovers, symbol_sellCrossovers, res.getTimeBatch());
             out.collect(finalOutput);
         });
 

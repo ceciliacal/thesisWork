@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import java.util.*;
@@ -22,7 +23,7 @@ public class Producer {
     private static String kafkaAddress;
     private static String kafkaPort;
     private static String kafkaTopic;
-    private static Map<Integer, Tuple2<Long, Timestamp>> batchProcTime;       //key: batch number, value: processing start
+    protected static volatile Map<Integer, Tuple2<Long, Timestamp>> batchProcTime;       //key: batch number, value: processing start
     protected static volatile boolean hasFinished;
 
     //creates kafka producer
@@ -35,10 +36,11 @@ public class Producer {
         return new KafkaProducer<>(props);
     }
 
-    public static void publishMessages(String kafkaAddress){
+    public static void publishMessages(String kafkaAddress) throws InterruptedException {
 
         final org.apache.kafka.clients.producer.Producer<String, String> producer = createProducer(kafkaAddress);
 
+        TimeUnit.MILLISECONDS.sleep(5000);
         System.out.println("------------------------START----------------------");
         try {
             Stream<String> FileStream = Files.lines(Paths.get(Config.dataset_path+".csv"));
@@ -108,14 +110,13 @@ public class Producer {
     }
 
 
-
     public static void main(String[] args) throws Exception {
 
         kafkaPort = "9092";
         hasFinished = false;
 
-        //try (InputStream input = new FileInputStream("config.properties")) {
-        try (InputStream input = new FileInputStream("/home/configProp/config.properties")) {
+        try (InputStream input = new FileInputStream("config.properties")) {
+        //try (InputStream input = new FileInputStream("/home/configProp/config.properties")) {
 
             Properties prop = new Properties();
             // load a properties file
