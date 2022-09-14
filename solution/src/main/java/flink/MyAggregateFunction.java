@@ -4,7 +4,7 @@ import data.Event;
 import org.apache.flink.api.common.functions.AggregateFunction;
 
 
-public class MyAggregateFunction implements AggregateFunction<Event, MyAccumulator, OutputQuery> {
+public class MyAggregateFunction implements AggregateFunction<Event, MyAccumulator, IntermediateOutput> {
 
     @Override
     public MyAccumulator createAccumulator() {
@@ -20,8 +20,8 @@ public class MyAggregateFunction implements AggregateFunction<Event, MyAccumulat
     }
 
     @Override
-    public OutputQuery getResult(MyAccumulator accumulator) {
-        return new OutputQuery(accumulator.getLastPricePerSymbol(), accumulator.getSymbolInBatches(), accumulator.getTimeBatch());
+    public IntermediateOutput getResult(MyAccumulator accumulator) {
+        return new IntermediateOutput(accumulator.getLastPricePerSymbol(), accumulator.getSymbolInBatches(), accumulator.getTimeBatch());
     }
 
     @Override

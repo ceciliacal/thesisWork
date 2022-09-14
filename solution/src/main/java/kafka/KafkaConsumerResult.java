@@ -63,9 +63,10 @@ public class KafkaConsumerResult {
                 //System.out.printf("Consumer Record:(%d, %s, %d, %d)\n", record.key(), record.value(), record.partition(), record.offset());
 
                 String str = record.value();
-                //System.out.println(str);
                 String[] values = str.split(",");
                 Integer batch = Integer.valueOf(values[0]);
+                //TODO. qui potrei prendere i tempi dal Consumer (Flink) mandandoli insieme ai risultati delle due query e fare
+                //TODO. un confronto fra le tempistiche all'interno di Flink ed esternamente con Kafka
 
                 //first record from new batch
                 if (batchStartTime.size()>0) {

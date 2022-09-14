@@ -10,7 +10,7 @@ import java.sql.Timestamp;
 import java.util.*;
 
 
-public class MyProcessWindowFunction extends ProcessWindowFunction<OutputQuery, FinalOutput, String, TimeWindow> {
+public class MyProcessWindowFunction extends ProcessWindowFunction<IntermediateOutput, FinalOutput, String, TimeWindow> {
 
     private Map<String, Integer> count;  //counts number of current window per symbol
     private Map<Tuple2<String,Integer>,Float> myEma38;   //K: <symbol,countWindow> - V: ema
@@ -21,13 +21,13 @@ public class MyProcessWindowFunction extends ProcessWindowFunction<OutputQuery, 
 
 
     @Override
-    public void process(String s, ProcessWindowFunction<OutputQuery, FinalOutput, String, TimeWindow>.Context context, Iterable<OutputQuery> elements, Collector<FinalOutput> out) throws Exception {
+    public void process(String s, ProcessWindowFunction<IntermediateOutput, FinalOutput, String, TimeWindow>.Context context, Iterable<IntermediateOutput> elements, Collector<FinalOutput> out) throws Exception {
 
         long windowStart = context.window().getStart();
         Date windowStartDate = new Date();
         windowStartDate.setTime(windowStart);
         Timestamp windowEndTs = new Timestamp(context.window().getEnd());
-        OutputQuery res = elements.iterator().next();
+        IntermediateOutput res = elements.iterator().next();
 
         Map<String, Float> lastPricePerSymbol = res.getLastPricePerSymbol();    //last price of current symbol (string s = symbol) cause it's keyed stream
         Map<String, List<Integer>> symbolInBatches = res.getSymbolInBatches();  //list of #batch containing current symbol
@@ -55,9 +55,9 @@ public class MyProcessWindowFunction extends ProcessWindowFunction<OutputQuery, 
         }
 
         //calculating ema38
-        OutputQuery.calculateEMA(s,lastPricePerSymbol.get(s), count.get(s), Config.ema38, myEma38);
+        IntermediateOutput.calculateEMA(s,lastPricePerSymbol.get(s), count.get(s), Config.ema38, myEma38);
         //calculating ema100
-        OutputQuery.calculateEMA(s, lastPricePerSymbol.get(s), count.get(s), Config.ema100, myEma100);
+        IntermediateOutput.calculateEMA(s, lastPricePerSymbol.get(s), count.get(s), Config.ema100, myEma100);
 
         //========== END OF QUERY1 ============
 
@@ -132,9 +132,9 @@ public class MyProcessWindowFunction extends ProcessWindowFunction<OutputQuery, 
                 lastThreeBuys.add(buyCrossovers.get(s).get(sizeBuy-3));
             } else if (sizeBuy==2){
                 lastThreeBuys.add(buyCrossovers.get(s).get(sizeBuy-1));
-                lastThreeBuys.add(buyCrossovers.get(s).get(sizeBuy-2));
+                lastThreeBuys.add(buyCrossovers.get(s).get(0));
             } else if (sizeBuy==1){
-                lastThreeBuys.add(buyCrossovers.get(s).get(sizeBuy-1));
+                lastThreeBuys.add(buyCrossovers.get(s).get(0));
             }
             //System.out.println(s+" "+windowStartDate+" - lastThreeBuys = "+ lastThreeBuys);
         }
@@ -149,9 +149,9 @@ public class MyProcessWindowFunction extends ProcessWindowFunction<OutputQuery, 
                 lastThreeSells.add(sellCrossovers.get(s).get(sizeSell-3));
             } else if (sizeSell==2){
                 lastThreeSells.add(sellCrossovers.get(s).get(sizeSell-1));
-                lastThreeSells.add(sellCrossovers.get(s).get(sizeSell-2));
+                lastThreeSells.add(sellCrossovers.get(s).get(0));
             } else if (sizeSell==1){
-                lastThreeSells.add(sellCrossovers.get(s).get(sizeSell-1));
+                lastThreeSells.add(sellCrossovers.get(s).get(0));
             }
             //System.out.println(s+" "+windowStartDate+" - lastThreeSells = "+ lastThreeSells );
         }
@@ -162,8 +162,10 @@ public class MyProcessWindowFunction extends ProcessWindowFunction<OutputQuery, 
         symbol_sellCrossovers.put(s, lastThreeSells);
 
 
-        List<Integer> currBatches = symbolInBatches.get(s);
-        currBatches.stream().forEach(batch -> {
+        List<Integer> currBatches = symbolInBatches.get(s); //prendo tutti i batch in cui è presente il simbolo corrente s
+        currBatches.forEach(batch -> {
+            //faccio collect di tutti i batch del simbolo corrente e passo la Map dell'accumulator che è o VUOTA o  SE NUM==0 ha tutti i batch (di quel simbolo/i) con relativo timestamp iniziale
+            //questo perche uno stesso simbolo può avere piu batch -> dipende dalla chiave
             FinalOutput finalOutput = new FinalOutput(s, batch, symbol_WindowEma38, symbol_WindowEma100, lastPricePerSymbol.get(s), symbol_buyCrossovers, symbol_sellCrossovers, res.getTimeBatch());
             out.collect(finalOutput);
         });

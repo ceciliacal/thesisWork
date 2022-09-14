@@ -29,7 +29,7 @@ public class MyAccumulator implements Serializable {
     private Map<String, Float> lastPricePerSymbol;      //K:symbol - V:last price
     private Map<String, List<Integer>> symbolInBatches; //K:symbol - V:list of batches num
 
-    private Map<String, Timestamp> timeBatch;           //K:batchNum - V:timestamp che prendo dal Map;
+    private Map<Integer, Timestamp> timeBatch;           //K:batchNum - V:timestamp che prendo dal Map;
 
     public MyAccumulator(){
         this.lastPricePerSymbol = new HashMap<>();
@@ -63,8 +63,12 @@ public class MyAccumulator implements Serializable {
 
         //timeBatch.put(value.getSymbol()+value.getBatch(), new Timestamp(System.currentTimeMillis()));
         if (value.getCurrTime()!=null){
-            timeBatch.put(value.getBatch().toString(), value.getCurrTime()._2);
-            System.out.println("timeBatch= "+timeBatch+"  currValue= "+value.getSymbol());
+            //todo: metti che chiave di timeBatch è Integer e non String ! è inutile
+            timeBatch.put(value.getBatch(), value.getCurrTime()._2); //ts che prendo dal Map lo salvo in timeBatch
+                                                                                // (che è attributo dell'Accumulator),
+                                                                                // cioè la prima volta che ho visto questo batch
+            //così io alla fine mi ritrovo che l'accumulator ha un hashmap con tutti i tempi iniziali di ogni batch
+            //System.out.println("timeBatch= "+timeBatch+"  currValue= "+value.getSymbol());
         }
 
 
@@ -87,11 +91,11 @@ public class MyAccumulator implements Serializable {
         this.symbolInBatches = symbolInBatches;
     }
 
-    public Map<String, Timestamp> getTimeBatch() {
+    public Map<Integer, Timestamp> getTimeBatch() {
         return timeBatch;
     }
 
-    public void setTimeBatch(Map<String, Timestamp> timeBatch) {
+    public void setTimeBatch(Map<Integer, Timestamp> timeBatch) {
         this.timeBatch = timeBatch;
     }
 }

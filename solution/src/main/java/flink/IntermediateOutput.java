@@ -6,14 +6,13 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 
-public class OutputQuery {
+public class IntermediateOutput {
 
     private Map<String, Float> lastPricePerSymbol;
     private Map<String, List<Integer>> symbolInBatches;
+    private Map<Integer, Timestamp> timeBatch;
 
-    private Map<String, Timestamp> timeBatch;
-
-    public OutputQuery(Map<String, Float> price, Map<String, List<Integer>> batches, Map<String, Timestamp> time) {
+    public IntermediateOutput(Map<String, Float> price, Map<String, List<Integer>> batches, Map<Integer, Timestamp> time) {
         this.lastPricePerSymbol = price;
         this.symbolInBatches = batches;
         this.timeBatch = time;
@@ -65,11 +64,11 @@ public class OutputQuery {
         this.symbolInBatches = symbolInBatches;
     }
 
-    public Map<String, Timestamp> getTimeBatch() {
+    public Map<Integer, Timestamp> getTimeBatch() {
         return timeBatch;
     }
 
-    public void setTimeBatch(Map<String, Timestamp> timeBatch) {
+    public void setTimeBatch(Map<Integer, Timestamp> timeBatch) {
         this.timeBatch = timeBatch;
     }
 

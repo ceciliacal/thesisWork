@@ -14,7 +14,6 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import utils.Config;
 import data.Event;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;

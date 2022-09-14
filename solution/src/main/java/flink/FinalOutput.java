@@ -15,10 +15,10 @@ public class FinalOutput {
     private Float price;
     private Map<String, List<Timestamp>> symbol_buyCrossovers;
     private Map<String, List<Timestamp>> symbol_sellCrossovers;
-    private Map<String, Timestamp> timeBatch;
+    private Map<Integer, Timestamp> timeBatch;
 
 
-    public FinalOutput(String symbol, Integer batch, Map<String, Tuple2<Integer, Float>> symbol_WindowEma38, Map<String, Tuple2<Integer, Float>> symbol_WindowEma100, Float price, Map<String, List<Timestamp>> symbol_buyCrossovers, Map<String, List<Timestamp>> symbol_sellCrossovers, Map<String, Timestamp> time) {
+    public FinalOutput(String symbol, Integer batch, Map<String, Tuple2<Integer, Float>> symbol_WindowEma38, Map<String, Tuple2<Integer, Float>> symbol_WindowEma100, Float price, Map<String, List<Timestamp>> symbol_buyCrossovers, Map<String, List<Timestamp>> symbol_sellCrossovers, Map<Integer, Timestamp> time) {
         this.symbol = symbol;
         this.batch = batch;
         this.symbol_WindowEma38 = symbol_WindowEma38;
@@ -87,11 +87,11 @@ public class FinalOutput {
         this.batch = batch;
     }
 
-    public Map<String, Timestamp> getTimeBatch() {
+    public Map<Integer, Timestamp> getTimeBatch() {
         return timeBatch;
     }
 
-    public void setTimeBatch(Map<String, Timestamp> timeBatch) {
+    public void setTimeBatch(Map<Integer, Timestamp> timeBatch) {
         this.timeBatch = timeBatch;
     }
 

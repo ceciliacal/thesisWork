@@ -24,7 +24,7 @@ public class MapFunctionEvent implements MapFunction<String, Event> {
         if (event.getNumEvent()==0){
             currMs = System.currentTimeMillis();
             currTime = new Timestamp(currMs);
-            System.out.println("map-time = "+currTime+"  "+event);
+            //System.out.println("map-time = "+currTime+"  "+event);
         }
 
         if (currMs!=null && currTime!=null){
