@@ -24,7 +24,9 @@ public class MapFunctionFinalOutput implements MapFunction<FinalOutput, String> 
                         element.getSymbol_WindowEma100().get(element.getSymbol())._2+","+
                         element.getSymbol_buyCrossovers().get(element.getSymbol())+","+
                         element.getSymbol_sellCrossovers().get(element.getSymbol())+","+
-                        element.getTimeBatch();
+                        element.getTimeBatch()+","+
+                        element.getWindowEnd()+","+
+                        element.getPrice();
 
         //System.out.println(queriesResult);
         return queriesResult;

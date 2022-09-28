@@ -108,9 +108,6 @@ public class Event {
         this.currTime = currTime;
     }
 
-    /*
-                Creates Timestamp object from symbol's last received update
-                 */
     public static Timestamp createTimestamp(String date, String time) {
 
         String dateTime = date+" "+time;

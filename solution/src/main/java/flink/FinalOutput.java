@@ -16,9 +16,10 @@ public class FinalOutput {
     private Map<String, List<Timestamp>> symbol_buyCrossovers;
     private Map<String, List<Timestamp>> symbol_sellCrossovers;
     private Map<Integer, Timestamp> timeBatch;
+    private Timestamp windowEnd;
 
 
-    public FinalOutput(String symbol, Integer batch, Map<String, Tuple2<Integer, Float>> symbol_WindowEma38, Map<String, Tuple2<Integer, Float>> symbol_WindowEma100, Float price, Map<String, List<Timestamp>> symbol_buyCrossovers, Map<String, List<Timestamp>> symbol_sellCrossovers, Map<Integer, Timestamp> time) {
+    public FinalOutput(String symbol, Integer batch, Map<String, Tuple2<Integer, Float>> symbol_WindowEma38, Map<String, Tuple2<Integer, Float>> symbol_WindowEma100, Float price, Map<String, List<Timestamp>> symbol_buyCrossovers, Map<String, List<Timestamp>> symbol_sellCrossovers, Map<Integer, Timestamp> time, Timestamp windowEnd) {
         this.symbol = symbol;
         this.batch = batch;
         this.symbol_WindowEma38 = symbol_WindowEma38;
@@ -27,6 +28,7 @@ public class FinalOutput {
         this.symbol_buyCrossovers = symbol_buyCrossovers;
         this.symbol_sellCrossovers = symbol_sellCrossovers;
         this.timeBatch = time;
+        this.windowEnd = windowEnd;
     }
 
     public String getSymbol() {
@@ -95,6 +97,14 @@ public class FinalOutput {
         this.timeBatch = timeBatch;
     }
 
+    public Timestamp getWindowEnd() {
+        return windowEnd;
+    }
+
+    public void setWindowEnd(Timestamp windowEnd) {
+        this.windowEnd = windowEnd;
+    }
+
     @Override
     public String toString() {
         return "FinalOutput{" +
@@ -106,6 +116,7 @@ public class FinalOutput {
                 ", symbol_buyCrossovers=" + symbol_buyCrossovers +
                 ", symbol_sellCrossovers=" + symbol_sellCrossovers +
                 ", timeBatch=" + timeBatch +
+                ", windowEnd=" + windowEnd +
                 '}';
     }
 }

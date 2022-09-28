@@ -166,7 +166,7 @@ public class MyProcessWindowFunction extends ProcessWindowFunction<IntermediateO
         currBatches.forEach(batch -> {
             //faccio collect di tutti i batch del simbolo corrente e passo la Map dell'accumulator che è o VUOTA o  SE NUM==0 ha tutti i batch (di quel simbolo/i) con relativo timestamp iniziale
             //questo perche uno stesso simbolo può avere piu batch -> dipende dalla chiave
-            FinalOutput finalOutput = new FinalOutput(s, batch, symbol_WindowEma38, symbol_WindowEma100, lastPricePerSymbol.get(s), symbol_buyCrossovers, symbol_sellCrossovers, res.getTimeBatch());
+            FinalOutput finalOutput = new FinalOutput(s, batch, symbol_WindowEma38, symbol_WindowEma100, lastPricePerSymbol.get(s), symbol_buyCrossovers, symbol_sellCrossovers, res.getTimeBatch(), windowEndTs);
             out.collect(finalOutput);
         });
 
