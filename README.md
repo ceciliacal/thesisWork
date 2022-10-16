@@ -1,7 +1,6 @@
 # thesisWork
 This is my master degree's thesis and it's a Data Stream Processing real-time application that computes market stream data in order to monitor stock prices to promptly find out whether selling or buying them. It is based on ACM DEBS Grand Challenge 2022 (https://2022.debs.org/call-for-grand-challenge-solutions/). Apache Flink and Kafka were used as Big Data tools to develop this solution.
 ## Technologies
-The proposed solution is based on the following frameworks and tools:
 * Java version: openjdk 11.0.14.1
 * Gradle version: 7.4
 * Docker: 20.10.12
@@ -11,7 +10,7 @@ The proposed solution is based on the following frameworks and tools:
 * Apache Flink 
 	
 ## Setup
-To run this project, you need to have previously installed Java and Gradle on your machine. 
+(This is only for LOCAL STANDALONE SETUP): To run this project, you need to have previously installed Java and Gradle on your machine. 
 Solution can be installed locally using:
 
 ```
