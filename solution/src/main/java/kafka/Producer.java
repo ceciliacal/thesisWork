@@ -14,7 +14,6 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import java.util.*;
 
@@ -23,6 +22,7 @@ public class Producer {
     private static String kafkaAddress;
     private static String kafkaPort;
     private static String kafkaTopic;
+    protected static volatile Map<Integer, Integer> batchCardinality;       //key: batch id, value: num elements
     protected static volatile Map<Integer, Tuple2<Long, Timestamp>> batchProcTime;       //key: batch number, value: processing start
     protected static volatile boolean hasFinished;
 
@@ -39,6 +39,7 @@ public class Producer {
     public static void publishMessages(String kafkaAddress) throws InterruptedException {
 
         final org.apache.kafka.clients.producer.Producer<String, String> producer = createProducer(kafkaAddress);
+        batchCardinality = new HashMap<>();
 
         TimeUnit.MILLISECONDS.sleep(5000);
         System.out.println("------------------------START----------------------");
@@ -54,14 +55,14 @@ public class Producer {
                 Timestamp eventTime = stringToTimestamp(tsCurrent,0);
                 ProducerRecord<String, String> CsvRecord = new ProducerRecord<>(kafkaTopic, 0, eventTime.getTime(), fields[4], line);
 
-                //System.out.println("eventTime: "+eventTime);
-                //System.out.println("line: " + line);
-
+                //saving processing start time for each batch
                 if (!batchProcTime.containsKey(batch)){
                     batchProcTime.put(batch, new Tuple2<>(System.currentTimeMillis(), new Timestamp(System.currentTimeMillis())));
                 }
 
-                //sending record
+                //counting elements in each batch
+                batchCardinality.put(batch, Integer.parseInt(fields[5]));
+
                 producer.send(CsvRecord, (metadata, exception) -> {
                     if(metadata != null){
                         //successful writes
@@ -73,17 +74,19 @@ public class Producer {
                     }
                 });
 
-                /*
-                if (batch==10){
-                    System.out.println(batchProcTime);
-                }
-                 */
+
             });
 
         } catch (IOException e) {
             e.printStackTrace();
         }
         System.out.println("------------------------END----------------------");
+        //printing elements number per batch
+        for (Integer batchId: batchCardinality.keySet()) {
+            Integer key = batchId;
+            Integer value = batchCardinality.get(key);
+            System.out.println(key + "," + value);
+        }
 
         hasFinished = true;
 
@@ -115,8 +118,8 @@ public class Producer {
         kafkaPort = "9092";
         hasFinished = false;
 
-        //try (InputStream input = new FileInputStream("config.properties")) {
-        try (InputStream input = new FileInputStream("/home/configProp/config.properties")) {
+        try (InputStream input = new FileInputStream("config.properties")) {
+        //try (InputStream input = new FileInputStream("/home/configProp/config.properties")) {
 
             Properties prop = new Properties();
             // load a properties file

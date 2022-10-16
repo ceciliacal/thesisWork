@@ -59,14 +59,11 @@ public class KafkaConsumerResult {
 
         final org.apache.kafka.clients.consumer.Consumer<Long, String> consumer = createConsumer();
 
-        /*
-        String token = "YocTCHFR59RXbWVTj87l4A-nREHNt4gB3PAqdNNBEB2Ey-GgtoUsRuhu0V4bnerCWi9tfgmbj0FxobjKS8L4EQ==";
+        String token = "4unS5E8b5itJZFPvFFgQymMElyc81ISzUbnZnwdTAg00S7bIo0b__A1KU1z_mO03KvFWayN4-VpE8G0oY6obfA==";
         String bucket = "sol";
-        String org = "myorg0";
+        String org = "org0";
 
         InfluxDBClient client = InfluxDBClientFactory.create("http://localhost:8086", token.toCharArray());
-
-         */
 
         final int giveUp = 200;
         int noRecordsCount = 0;
@@ -81,20 +78,14 @@ public class KafkaConsumerResult {
             }
 
             consumerRecords.forEach(record -> {
-                //System.out.printf("Consumer Record:(%d, %s, %d, %d)\n", record.key(), record.value(), record.partition(), record.offset());
-                //result format example: 0,IEBBB.FR,2.7020512,1.0433663,null,null,{0=2022-09-26 17:52:17.267}
-                //updated ---> 0,IEBBB.FR,2.7020512,1.0433663,null,null,{0=2022-09-26 17:58:06.063},2021-11-08 08:05:00.0
+                //result format example: ---> 0,IEBBB.FR,2.7020512,1.0433663,null,null,{0=2022-09-26 17:58:06.063},2021-11-08 08:05:00.0
 
                 String str = record.value();
                 //System.out.println(str);
                 String[] values = str.split(",");
                 Integer batch = Integer.valueOf(values[0]);
-                //TODO. qui potrei prendere i tempi dal Consumer (Flink) mandandoli insieme ai risultati delle due query e fare
-                //TODO. un confronto fra le tempistiche all'interno di Flink ed esternamente con Kafka
-
 
                 //first record from new batch
-
                 if (batchStartTime.size()>0) {
                     if (!batchEndTime.containsKey(batch)) {
                         long currentTimeMs = System.currentTimeMillis();
@@ -107,52 +98,43 @@ public class KafkaConsumerResult {
                     }
                 }
 
-
-                /*
-
-                //updated ---> 0,IEBBB.FR,2.7020512,1.0433663,null,null,{0=2022-09-26 17:58:06.063},2021-11-08 08:05:00.0
-                //loading data into influxDb
+                //---------- loading data into influxDb ----------
                 Timestamp currWindowEnd = stringToTimestamp(values[7],0);
-                Timestamp startInfluxWrite = stringToTimestamp("2021-11-09 13:59:00.0",0);
-                Timestamp endInfluxWrite = stringToTimestamp("2021-11-09 17:00:00.0",0);
-                //System.out.println("currWindowEnd = "+currWindowEnd+"  startInfluxWrite= "+startInfluxWrite);
                 assert currWindowEnd != null;
-                if (currWindowEnd.after(startInfluxWrite) && currWindowEnd.before(endInfluxWrite)){
 
-                    String input = values[7].substring(0, values[7].length() - 2);
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.UK);  // Specify locale to determine human language and cultural norms used in translating that input string.
-                    LocalDateTime ldt = LocalDateTime.parse(input, formatter);
-                    Instant eventTime = ldt.atZone(ZoneId.of("Europe/London")).toInstant();
+                //Timestamp startInfluxWrite = stringToTimestamp("2021-11-09 13:59:00.0",0);
+                //Timestamp endInfluxWrite = stringToTimestamp("2021-11-09 14:31:00.0",0);
 
-                    Point point = Point
-                            .measurement("dspResults")      //questo potrebbe essere anche batch num in alternativa!
-                            .addTag("symbol_id", values[1])
-                            .addField("ema38", Double.valueOf(values[2]))
-                            .addField("ema100", Double.valueOf(values[3]))
-                            .addField("price", Double.valueOf(values[8]));
+                String input = values[7].substring(0, values[7].length() - 2);
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.UK);  // Specify locale to determine human language and cultural norms used in translating that input string.
+                LocalDateTime ldt = LocalDateTime.parse(input, formatter);
+                Instant eventTime = ldt.atZone(ZoneId.of("Europe/London")).toInstant();
 
-                    if (values[4].equals("null")){
-                        point.addField("buy", "-");
-                    } else {
-                        point.addField("buy", values[9]);
-                    }
-                    if(values[5].equals("null")){
-                        point.addField("sell", "-");
-                    } else {
-                        point.addField("sell", values[10]);
-                    }
+                Point point = Point
+                        .measurement("dspResults")      //questo potrebbe essere anche batch num in alternativa!
+                        .addTag("symbol_id", values[1])
+                        .addField("ema38", Double.valueOf(values[2]))
+                        .addField("ema100", Double.valueOf(values[3]))
+                        .addField("price", Double.valueOf(values[8]));
 
-                    point.time(eventTime, WritePrecision.MS);
-                    System.out.println(str);
-
-                    try (WriteApi writeApi = client.getWriteApi()) {
-                        writeApi.writePoint(bucket, org, point);
-                        //System.out.println("eventTime= "+eventTime);
-                    }
-
+                if (values[4].equals("null")){
+                    point.addField("buy", "-");
+                } else {
+                    point.addField("buy", values[9]);
+                }
+                if(values[5].equals("null")){
+                    point.addField("sell", "-");
+                } else {
+                    point.addField("sell", values[10]);
                 }
 
-                 */
+                point.time(eventTime, WritePrecision.MS);
+                System.out.println(str);
+
+                try (WriteApi writeApi = client.getWriteApi()) {
+                    writeApi.writePoint(bucket, org, point);
+                    //System.out.println("eventTime= "+eventTime);
+                }
 
 
 
@@ -161,26 +143,6 @@ public class KafkaConsumerResult {
             consumer.commitAsync();
 
         }
-
-        System.out.println("sto fuori dal while");
-
-        /*
-        while (true){
-            if (Producer.hasFinished){
-                System.out.println("sto nell IF has finished");
-                PrintWriter writer = new PrintWriter("results.txt");
-                for (String listProcTime : listProcTimes) {
-                    writer.append(listProcTime);
-                }
-                assert writer != null;
-                writer.close();
-                System.out.println("File is done");
-                break;
-            }
-        }
-
-         */
-
 
     }
 

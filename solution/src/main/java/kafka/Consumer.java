@@ -30,9 +30,9 @@ public class Consumer {
     //creating kafka consumer to listen for data in kafka broker
     public static void main(String[] args) throws Exception {
 
-        int parallelism = 3;
-        //try (InputStream input = new FileInputStream("config.properties")) {
-        try (InputStream input = new FileInputStream("/home/configProp/config.properties")) {
+        int parallelism = 1;
+        try (InputStream input = new FileInputStream("config.properties")) {
+        //try (InputStream input = new FileInputStream("/home/configProp/config.properties")) {
 
             Properties prop = new Properties();
             // load a properties file
