@@ -8,6 +8,8 @@ This is my master degree's thesis and it's a Data Stream Processing real-time ap
 * Kafka: 5.3.0
 * Zookeeper: 3.8.0
 * Apache Flink 
+* InfluxDB: 2.0
+* Grafana: 7.3.6
 	
 ## Setup
 (This is only for LOCAL STANDALONE SETUP): To run this project, you need to have previously installed Java and Gradle on your machine. 
@@ -22,8 +24,8 @@ $ cd ..
 Make sure you set your Kafka container's IP address in the "config.properties" file you can find in the .\solution folder.
 In order to execute this software, you now need to open two new separate terminal shells to run the two applications in parallel. Type the next command in the former, and the next one in the latter: 
 ```
-$ gradle producer'
-$ gradle run'
+$ gradle producer
+$ gradle run
 ```
  
 
