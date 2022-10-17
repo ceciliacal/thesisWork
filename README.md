@@ -22,7 +22,7 @@ $ sudo docker-compose up
 $ cd .. 
 ```
 Make sure you set your Kafka container's IP address in the "config.properties" file you can find in the .\solution folder.
-In order to execute this software, you now need to open two new separate terminal shells to run the two applications in parallel. Type the next command in the former, and the next one in the latter: 
+In order to execute this software, you need to open two separate terminal shells to run two applications in parallel (kafka/Producer and kafka/Consumer). Type the next command in the former, and the next one in the latter: 
 ```
 $ gradle producer
 $ gradle run
