@@ -17,6 +17,9 @@ Solution can be installed locally using:
 
 ```
 $ git clone "this repo's url"
+```
+Once inside \thesisWork\solution directory please type the following lines to setup Kafka and ZooKeeper:
+```
 $ cd docker/
 $ sudo docker-compose up
 $ cd .. 
@@ -33,4 +36,9 @@ To stop the docker container, you can type:
 ```
 $ cd docker/
 $ sudo ./stop.sh
+```
+To delete Kafka topics, you can type:
+```
+$ cd docker/
+$ sudo ./removeTopic.sh
 ```
